@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
+console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
 
 (function() {
     // --- GLOBAL CRASH INTERCEPTOR ---
@@ -19,7 +19,7 @@ console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
                 '<div id="sys-loader" class="p-10 bg-sky-500/5 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg">',
                     '<span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>',
                     '<h2 class="text-2xl font-black text-sky-600 uppercase tracking-widest mb-2">Initializing Architecture...</h2>',
-                    '<p class="text-gray-400">Decoding Base64 Payloads...</p>',
+                    '<p class="text-gray-400">Decoding Static Payloads...</p>',
                 '</div>',
                 '<div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">',
                     '<span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>',
@@ -164,9 +164,30 @@ console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
         targetEl.innerHTML = htmlOutput;
     }
 
+    function triggerCopy(text, labelEl) {
+        const updateLabel = () => {
+            if(labelEl) {
+                const orig = labelEl.getAttribute('data-orig-text') || labelEl.textContent;
+                if (labelEl.textContent !== 'Copied!') labelEl.setAttribute('data-orig-text', orig);
+                labelEl.textContent = 'Copied!'; 
+                setTimeout(() => labelEl.textContent = orig, 2000); 
+            }
+        };
+        const fallbackCopy = () => {
+            const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); updateLabel(); } catch (err) {}
+            document.body.removeChild(ta);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(updateLabel).catch(() => fallbackCopy());
+        } else {
+            fallbackCopy();
+        }
+    }
+
     // --- 3. MAIN INITIALIZATION ---
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v8.4 logic.");
+        console.log("[GPA Engine] initApp() executing v8.5 logic.");
         const fallback = document.getElementById('fallback-boot-screen');
         if (fallback) fallback.remove();
         
@@ -195,14 +216,13 @@ console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
             return; 
         }
 
-        // 3. Payload Parsing (Handles both Base64 and Plain Text fallbacks)
+        // 3. Payload Parsing (Handles both Base64 and Plain Text fallbacks depending on future prompts)
         const dataNode = document.getElementById('raw-data');
         let rawData = { draft: "", prompt: "", draft_b64: "", prompt_b64: "" };
         if (dataNode) {
             try { 
                 rawData = JSON.parse(dataNode.textContent); 
             } catch (err) { 
-                // Auto-recover escaped newlines just in case
                 try {
                     const sanitized = dataNode.textContent.replace(/\\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '');
                     rawData = JSON.parse(sanitized);
@@ -215,7 +235,7 @@ console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
         let draftText = rawData.draft || "";
         let promptText = rawData.prompt || "";
 
-        // Base64 Decoders
+        // Base64 Decoders (if present)
         if (rawData.draft_b64) {
             try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
             catch(e) { draftText = atob(rawData.draft_b64); }
@@ -235,7 +255,7 @@ console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
         const path = stateData.meta.executionPath || 'B';
         document.getElementById('ui-path').textContent = path === 'A' ? 'Standard Prompt' : 'Custom Gem';
         
-        const versionNum = stateData.meta.version || 'v8.4';
+        const versionNum = stateData.meta.version || 'v8.5';
         const updateTitle = document.getElementById('ui-update-title');
         if (updateTitle) updateTitle.textContent = "Refinements Applied to " + versionNum + ":";
 
