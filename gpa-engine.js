@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
+console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -69,7 +69,6 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative";
         
-        // The Rich UI Container restored from v6.8
         wrapper.innerHTML = `
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
             <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
@@ -180,11 +179,11 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
                             
                             <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
                                 <div class="flex flex-col h-full">
-                                    <h3 class="text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2 shrink-0">
-                                        <span class="material-symbols-outlined text-[18px]">folder_zip</span> Gem Knowledge Base
+                                    <h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2 shrink-0">
+                                        <span class="material-symbols-outlined text-[20px]">folder_zip</span> Gem Knowledge Base
                                     </h3>
                                     <div class="custom-scrollbar overflow-auto flex-grow">
-                                        <p class="mb-4 text-xs italic opacity-80 text-gray-500">Download or copy these templates to upload to your Gem.</p>
+                                        <p class="mb-5 text-sm italic opacity-80 text-gray-500">Download or copy these templates to upload to your Gem.</p>
                                         <div id="ui-kb-templates-container"></div>
                                     </div>
                                 </div>
@@ -192,9 +191,11 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
 
                             <div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
                                 <h3 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">visibility</span> Output Preview
+                                    <span class="material-symbols-outlined text-[18px]">visibility</span> Standard Execution
                                 </h3>
-                                <div id="ui-preview-content" class="custom-scrollbar outline-none text-[12px] text-gray-700 dark:text-gray-400 overflow-auto flex-grow leading-relaxed" contenteditable="false" spellcheck="false">This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.</div>
+                                <div class="text-sm text-gray-700 dark:text-gray-400 flex-grow leading-relaxed">
+                                    This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -270,10 +271,14 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
         </div>`;
         
         document.body.appendChild(wrapper);
+
+        const style = document.createElement('style');
+        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
+        document.head.appendChild(style);
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v8.6 logic.");
+        console.log("[GPA Engine] initApp() executing v8.7 logic.");
         buildUI();
 
         const stateNode = document.getElementById('app-state');
@@ -295,6 +300,13 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
                 if (loader) loader.style.display = 'none';
                 if (blocker) { blocker.classList.remove('hidden'); blocker.style.display = 'block'; }
             }, 800); 
+
+            document.addEventListener('click', ev => {
+                const btn = ev.target.closest('.action-btn');
+                if (btn && btn.dataset.action === 'copy-raw') {
+                    triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
+                }
+            });
             return; 
         }
 
@@ -316,12 +328,23 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
             catch(e) { promptText = atob(rawData.prompt_b64); }
         }
 
-        // Shared Blocks Hydration
-        window.versions = appState.versions || [{ id: "v1.0", content: "" }, { id: "Current", content: "" }];
-        if (draftText) window.versions[0].content = draftText;
-        if (promptText) window.versions[window.versions.length - 1].content = promptText;
+        // Hardened Version Array Hydration (Eliminates the TypeError crash)
+        let parsedVersions = appState.versions;
+        if (!Array.isArray(parsedVersions) || parsedVersions.length === 0) {
+            parsedVersions = [
+                { id: "v1.0", content: "" }, 
+                { id: appState.meta.version || "Current", content: "" }
+            ];
+        } else if (parsedVersions.length === 1) {
+            parsedVersions.unshift({ id: "v1.0", content: "" });
+        }
+        
+        if (draftText) parsedVersions[0].content = draftText;
+        if (promptText) parsedVersions[parsedVersions.length - 1].content = promptText;
+        
+        window.versions = parsedVersions;
 
-        if (window.versions && appState.sharedBlocks) {
+        if (appState.sharedBlocks) {
             window.versions = window.versions.map(v => {
                 if (v.content) {
                     let hydratedContent = v.content;
@@ -574,7 +597,6 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
                 let htmlContent = appState.kbTemplates[key];
                 if (!htmlContent) return;
 
-                // DOM DYNAMIC CLONING LOGIC (Restored from v6.8)
                 if (htmlContent === "DYNAMIC_UI_SHELL") {
                     const clone = document.documentElement.cloneNode(true);
                     const cleanEl = (selector, html = '') => { const el = clone.querySelector(selector); if(el) el.innerHTML = html; };
@@ -652,9 +674,7 @@ console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
         // Hide boot overlay and show app
         setTimeout(() => {
             const mdc = document.getElementById('model-detection-container');
-            const overlay = document.getElementById('sys-boot-overlay');
             if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
-            if (overlay) { overlay.style.opacity = '0'; setTimeout(() => overlay.style.display = 'none', 300); }
             const mainApp = document.getElementById('main-app-container');
             if(mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
         }, 500);
