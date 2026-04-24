@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
+console.log("[GPA Engine] v8.4 - Base64 Hybrid Architecture Booting...");
 
 (function() {
     // --- GLOBAL CRASH INTERCEPTOR ---
@@ -166,10 +166,13 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
 
     // --- 3. MAIN INITIALIZATION ---
     function initApp() {
-        console.log("[GPA Engine] initApp() executing.");
+        console.log("[GPA Engine] initApp() executing v8.4 logic.");
+        const fallback = document.getElementById('fallback-boot-screen');
+        if (fallback) fallback.remove();
+        
         buildUI();
 
-        // Safe Config Parsing
+        // 1. Safe Config Parsing
         const stateNode = document.getElementById('app-state');
         if (!stateNode) throw new Error("Missing #app-state node config. The HTML file is malformed.");
         
@@ -180,7 +183,7 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
         }
 
-        // --- MODEL DETECTION CHECK (REFLEX) ---
+        // 2. Reflex Blocker
         const reflexOut = stateData.meta.reflexOutput ? stateData.meta.reflexOutput.toString().trim().toUpperCase() : "";
         if (reflexOut !== "M") {
             setTimeout(() => {
@@ -192,21 +195,27 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
             return; 
         }
 
-        // BASE64 JSON DECODING (Restored v7.11 Logic)
+        // 3. Payload Parsing (Handles both Base64 and Plain Text fallbacks)
         const dataNode = document.getElementById('raw-data');
-        let rawData = { draft_b64: "", prompt_b64: "" };
+        let rawData = { draft: "", prompt: "", draft_b64: "", prompt_b64: "" };
         if (dataNode) {
             try { 
                 rawData = JSON.parse(dataNode.textContent); 
             } catch (err) { 
-                throw new Error("JSON Parse Error in #raw-data payload. The Base64 string was incorrectly formatted.");
+                // Auto-recover escaped newlines just in case
+                try {
+                    const sanitized = dataNode.textContent.replace(/\\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '');
+                    rawData = JSON.parse(sanitized);
+                } catch(e) {
+                    throw new Error("JSON Parse Error in #raw-data payload. The LLM formatting crashed the parser.");
+                }
             }
         }
 
-        let draftText = "";
-        let promptText = "";
+        let draftText = rawData.draft || "";
+        let promptText = rawData.prompt || "";
 
-        // Safely decode base64 strings
+        // Base64 Decoders
         if (rawData.draft_b64) {
             try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
             catch(e) { draftText = atob(rawData.draft_b64); }
@@ -216,7 +225,7 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
             catch(e) { promptText = atob(rawData.prompt_b64); }
         }
 
-        // UI Dashboard Population
+        // 4. UI Dashboard Population
         document.getElementById('ui-gem-name').textContent = stateData.meta.gemName || "GPA";
         document.getElementById('ui-obj').textContent = stateData.meta.coreObjective || "...";
         document.getElementById('ui-logic').textContent = stateData.meta.globalPromptLogic || "...";
@@ -226,7 +235,7 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
         const path = stateData.meta.executionPath || 'B';
         document.getElementById('ui-path').textContent = path === 'A' ? 'Standard Prompt' : 'Custom Gem';
         
-        const versionNum = stateData.meta.version || 'v8.3';
+        const versionNum = stateData.meta.version || 'v8.4';
         const updateTitle = document.getElementById('ui-update-title');
         if (updateTitle) updateTitle.textContent = "Refinements Applied to " + versionNum + ":";
 
@@ -237,29 +246,31 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
             });
         }
 
-        // Hydrate Diff Versions
+        // 5. Diff Engine History & Hydration
         window.versions = [
-            { id: "v1.0", content: draftText || "No draft provided." },
-            { id: versionNum, content: promptText || "No optimized prompt generated." }
+            { id: "v1.0", content: draftText || "Waiting for initial draft..." },
+            { id: versionNum, content: promptText || "Waiting for optimized prompt generation..." }
         ];
 
-        // Hydrate Shared Blocks (If present)
-        if (stateData.sharedBlocks) {
-            window.versions = window.versions.map(v => {
-                if (v.content) {
-                    let hydrated = v.content;
-                    Object.keys(stateData.sharedBlocks).forEach(key => {
-                        const placeholder = '{{' + key + '}}';
-                        if (hydrated.includes(placeholder)) {
-                            hydrated = hydrated.split(placeholder).join(stateData.sharedBlocks[key]);
+        try {
+            const history = localStorage.getItem('gpa_versions_' + stateData.meta.gemName);
+            if (history) {
+                const savedVersions = JSON.parse(history);
+                if (Array.isArray(savedVersions)) {
+                    savedVersions.forEach(v => {
+                        const idx = window.versions.findIndex(x => x.id === v.id);
+                        if (idx !== -1 && !window.versions[idx].content) {
+                            window.versions[idx].content = v.content;
                         }
                     });
-                    v.content = hydrated;
                 }
-                return v;
-            });
-        }
+            }
+        } catch(e) {}
 
+        // Save current history back to local storage
+        try { localStorage.setItem('gpa_versions_' + stateData.meta.gemName, JSON.stringify(window.versions)); } catch(e) {}
+
+        // 6. Diff UI Execution
         let curIdx = window.versions.length - 1;
         const updateVersionUI = () => {
             document.getElementById('v-display-label').textContent = window.versions[curIdx].id;
@@ -272,6 +283,7 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
 
         updateVersionUI();
 
+        // 7. Event Listeners
         document.getElementById('v-prev-btn').onclick = () => { if(curIdx > 0) { curIdx--; updateVersionUI(); } };
         document.getElementById('v-next-btn').onclick = () => { if(curIdx < window.versions.length - 1) { curIdx++; updateVersionUI(); } };
 
@@ -296,6 +308,7 @@ console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
             }
         });
 
+        // 8. Boot Success
         setTimeout(() => {
             const o = document.getElementById('sys-boot-overlay');
             if(o) { o.style.opacity = '0'; setTimeout(() => o.style.display = 'none', 300); }
