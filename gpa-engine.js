@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
+console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -69,6 +69,7 @@ console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative";
         
+        // The Rich UI Container restored from v6.8
         wrapper.innerHTML = `
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
             <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
@@ -271,14 +272,10 @@ console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
         </div>`;
         
         document.body.appendChild(wrapper);
-
-        const style = document.createElement('style');
-        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
-        document.head.appendChild(style);
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v8.7 logic.");
+        console.log("[GPA Engine] initApp() executing v8.8 logic.");
         buildUI();
 
         const stateNode = document.getElementById('app-state');
@@ -310,15 +307,21 @@ console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
             return; 
         }
 
-        // Base64 JSON Extraction
+        // Payload JSON Extraction
         const dataNode = document.getElementById('raw-data');
-        let rawData = { draft_b64: "", prompt_b64: "" };
+        let rawData = { draft: "", prompt: "", draft_b64: "", prompt_b64: "" };
         if (dataNode) {
-            try { rawData = JSON.parse(dataNode.textContent); } catch (err) {}
+            try { rawData = JSON.parse(dataNode.textContent); } catch (err) {
+                // Fallback attempt for standard escaped text
+                try {
+                    const sanitized = dataNode.textContent.replace(/\\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '');
+                    rawData = JSON.parse(sanitized);
+                } catch(e2) {}
+            }
         }
 
-        let draftText = "";
-        let promptText = "";
+        let draftText = rawData.draft || "";
+        let promptText = rawData.prompt || "";
         if (rawData.draft_b64) {
             try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
             catch(e) { draftText = atob(rawData.draft_b64); }
@@ -438,6 +441,8 @@ console.log("[GPA Engine] v8.7 - Static Endpoint & Hardened Booting...");
                 `;
                 kbContainer.appendChild(kbDiv);
             });
+        } else if (kbContainer) {
+             kbContainer.innerHTML = '<p class="text-sm text-gray-500">No KB templates generated for this iteration.</p>';
         }
 
         // Questions
