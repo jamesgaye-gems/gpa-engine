@@ -1,141 +1,18 @@
-console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
+console.log("[GPA Engine] v8.6 - Rich UI & Base64 Architecture Booting...");
 
 (function() {
-    // --- GLOBAL CRASH INTERCEPTOR ---
-    window.onerror = function(msg, url, line, col, err) {
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#7f1d1d;color:white;padding:25px;z-index:9999999;font-family:monospace;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,0.5);";
-        errorDiv.innerHTML = "<strong>GPA ENGINE FATAL ERROR:</strong><br><br>Error: " + msg + "<br>Line: " + line + "<br><br>The Javascript engine encountered an unexpected syntax crash.";
-        document.body.appendChild(errorDiv);
-        return false;
-    };
+    window.tailwind = window.tailwind || {};
+    tailwind.config = { darkMode: 'class' };
 
-    function buildUI() {
-        const wrapper = document.createElement('div');
-        wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
-        
-        const uiHTML = [
-            '<div id="sys-boot-overlay" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300">',
-                '<div id="sys-loader" class="p-10 bg-sky-500/5 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg">',
-                    '<span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>',
-                    '<h2 class="text-2xl font-black text-sky-600 uppercase tracking-widest mb-2">Initializing Architecture...</h2>',
-                    '<p class="text-gray-400">Decoding Static Payloads...</p>',
-                '</div>',
-                '<div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">',
-                    '<span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>',
-                    '<h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Gemini Fast Model Detected</h2>',
-                    '<p class="text-gray-700 dark:text-gray-300 mb-2 text-lg leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> to render the UI correctly. The Fast model aggressively compresses output to save tokens, resulting in truncated code and a corrupted interface.</p>',
-                '</div>',
-            '</div>',
-            '<div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden">',
-                '<div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">',
-                    '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">',
-                        '<div class="flex items-center gap-4">',
-                            '<div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">',
-                                '<span class="material-symbols-outlined text-sky-500 text-[28px]">design_services</span>',
-                                '<span id="ui-gem-name" class="font-black text-xl hidden sm:block">Gemini Prompt Architect</span>',
-                            '</div>',
-                            '<div class="w-px h-8 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>',
-                            '<div class="flex items-center space-x-6 w-full md:w-auto overflow-x-auto no-scrollbar">',
-                                '<button class="tab-btn tab-active pb-1 px-1 text-base font-semibold text-sky-500 border-b-2 border-sky-500 whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>',
-                                '<button class="tab-btn pb-1 px-1 text-base font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>',
-                            '</div>',
-                        '</div>',
-                        '<div class="flex items-center justify-end space-x-3 shrink-0">',
-                            '<button class="action-btn flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">',
-                                '<span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>',
-                            '</button>',
-                            '<button class="action-btn w-10 h-10 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle">',
-                                '<span class="material-symbols-outlined text-[22px] pointer-events-none">light_mode</span>',
-                            '</button>',
-                        '</div>',
-                    '</div>',
-                '</div>',
-                '<div class="flex-1 overflow-y-auto"><div class="p-4 md:p-8 pt-4">',
-                    '<div id="app-content-prompt" class="space-y-6 mt-4">',
-                        '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">',
-                            '<div class="bg-blue-50/50 dark:bg-sky-900/10 border-2 border-sky-100 dark:border-sky-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">',
-                                '<h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">analytics</span> Executive Summary</h3>',
-                                '<div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow"><ul class="list-none space-y-4 mb-6">',
-                                    '<li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Core Objective:</strong> <span id="ui-obj" class="block leading-relaxed">...</span></li>',
-                                    '<li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Prompt Logic:</strong> <span id="ui-logic" class="block leading-relaxed">...</span></li>',
-                                '</ul></div>',
-                                '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-sky-200 dark:border-sky-800 mt-auto">',
-                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Recommended Model</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-model">...</span></div>',
-                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Required Tool</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-tool">...</span></div>',
-                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Execution Path</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-path">...</span></div>',
-                                '</div>',
-                            '</div>',
-                            '<div class="bg-indigo-50/50 dark:bg-indigo-900/10 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">',
-                                '<h3 class="text-xl font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">update</span> Updates & Upgrades</h3>',
-                                '<div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">',
-                                    '<p class="mb-4 font-bold text-indigo-500 text-base" id="ui-update-title"></p>',
-                                    '<ul class="list-disc pl-5 space-y-3 leading-relaxed" id="ui-updates-list"></ul>',
-                                '</div>',
-                            '</div>',
-                        '</div>',
-                        '<hr class="border-sky-200 dark:border-sky-800/50 my-8">',
-                        '<h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">tune</span> Surgical Questions</h3>',
-                        '<div id="ui-questions-container" class="space-y-6"></div>',
-                        '<div class="mt-8 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">',
-                            '<div class="flex items-center justify-start gap-4 mb-4">',
-                                '<h4 class="font-bold text-slate-800 dark:text-slate-200 text-base flex items-center gap-2"><span class="material-symbols-outlined text-sky-500 text-[20px]">chat</span> Feedback Summary</h4>',
-                                '<button class="action-btn flex items-center gap-1 px-4 py-1.5 text-sm font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none whitespace-nowrap" data-action="copy-answers"><span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="pointer-events-none copy-answers-label">Copy Answers</span></button>',
-                            '</div>',
-                            '<div id="feedback-summary" class="font-mono text-sm text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-4 bg-gray-50 dark:bg-[#18191a] rounded leading-relaxed" contenteditable="true" spellcheck="false">Please select options above.</div>',
-                        '</div>',
-                        '<div class="flex flex-col md:flex-row gap-6 md:h-[750px] mt-8">',
-                            '<div class="flex-[1.4] min-w-[320px] bg-white dark:bg-[#1e1f20] rounded-[28px] p-6 shadow-xl border border-gray-200 dark:border-gray-700/50 flex flex-col overflow-hidden">',
-                                '<div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 shrink-0">',
-                                    '<h3 class="text-base font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Optimized Prompt</h3>',
-                                    '<div id="version-controls" class="items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-lg flex">',
-                                        '<button id="v-prev-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_left</span></button>',
-                                        '<span id="v-display-label" class="text-xs font-bold px-3 text-slate-700 dark:text-slate-300 min-w-[50px] text-center">...</span>',
-                                        '<button id="v-next-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_right</span></button>',
-                                    '</div>',
-                                '</div>',
-                                '<div id="gem-instructions" class="outline-none whitespace-pre-wrap text-sm font-mono leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>',
-                            '</div>',
-                            '<div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">',
-                                '<div class="flex flex-col h-full"><h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2 shrink-0"><span class="material-symbols-outlined text-[20px]">folder_zip</span> Gem Knowledge Base</h3><div class="overflow-auto flex-grow"><p class="mb-5 text-sm italic opacity-80 text-gray-500">Download or copy templates required for this Gem.</p><div id="ui-kb-templates-container"></div></div></div>',
-                            '</div>',
-                            '<div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">',
-                                '<h3 class="text-base font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">visibility</span> Standard Execution</h3><div class="text-sm text-gray-700 dark:text-gray-400 flex-grow leading-relaxed">This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.</div>',
-                            '</div>',
-                        '</div>',
-                    '</div>',
-                    '<div id="app-content-setup" class="hidden pb-12">',
-                        '<div class="max-w-3xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 md:p-10 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">',
-                            '<h3 class="text-2xl font-bold mb-8 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined text-[28px]">rocket_launch</span> Deployment Guide</h3>',
-                            '<div class="space-y-6 text-base text-gray-700 dark:text-gray-300">',
-                                '<div id="setup-option-a" class="hidden">',
-                                    '<h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>',
-                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-emerald-500 block mb-2 underline text-xs">Step 1: Copy Prompt</span>Return to the <strong>System Prompt</strong> tab and copy the optimized prompt.</div>',
-                                '</div>',
-                                '<div id="setup-option-b" class="hidden">',
-                                    '<h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>',
-                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 1: Gem Creation</span>Click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full text-xs font-bold">+ New Gem</span> in the sidebar.</div>',
-                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm"><div><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 2: Name the Gem</span><span id="setup-gem-name" class="font-mono text-lg font-semibold text-slate-800 dark:text-white"></span></div><button class="action-btn flex items-center gap-1 px-4 py-2 text-sm font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name"><span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span></button></div>',
-                                '</div>',
-                            '</div>',
-                        '</div>',
-                    '</div>',
-                '</div></div>',
-            '</div>'
-        ].join('');
-        
-        wrapper.innerHTML = uiHTML;
-        document.body.appendChild(wrapper);
-
-        const style = document.createElement('style');
-        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
-        document.head.appendChild(style);
-    }
-
-    // --- 2. LOGIC FUNCTIONS ---
-    function decodeEntities(str) {
+    function decodeLegacyEntities(str) {
         if (!str) return '';
-        return str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        return str.replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>')
+                  .replace(/&quot;/g, '"')
+                  .replace(/&#39;/g, "'")
+                  .replace(/&amp;/g, '&')
+                  .replace(/\\u0060/g, '`')
+                  .replace(/\\u003c/g, '<');
     }
 
     function getHighlightedString(line) {
@@ -145,20 +22,23 @@ console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
 
     function renderDiff(targetEl, currentText, previousText) {
         if (!previousText) {
-            const lines = decodeEntities(currentText).split('\n');
-            targetEl.innerHTML = lines.map(l => getHighlightedString(l)).join('\n');
+            const currLines = decodeLegacyEntities(currentText).split('\n');
+            let htmlOutput = '';
+            for (let i = 0; i < currLines.length; i++) htmlOutput += getHighlightedString(currLines[i]) + '\n';
+            targetEl.innerHTML = htmlOutput;
             return;
         }
-        const currLines = decodeEntities(currentText).split('\n');
-        const prevSet = new Set(decodeEntities(previousText).split('\n').map(l => l.trim()));
+        const currLines = decodeLegacyEntities(currentText).split('\n');
+        const prevLines = decodeLegacyEntities(previousText).split('\n');
+        const prevSet = new Set(prevLines.map(l => l.trim()));
         let htmlOutput = '';
         for (let i = 0; i < currLines.length; i++) {
             const line = currLines[i];
             const highlighted = getHighlightedString(line);
             if (line.trim() && !prevSet.has(line.trim())) {
-                htmlOutput += '<span class="diff-new">' + highlighted + '</span>\n';
+                htmlOutput += `<span class="diff-new">${highlighted}</span>\n`;
             } else {
-                htmlOutput += highlighted + '\n';
+                htmlOutput += `${highlighted}\n`;
             }
         }
         targetEl.innerHTML = htmlOutput;
@@ -185,30 +65,232 @@ console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
         }
     }
 
-    // --- 3. MAIN INITIALIZATION ---
-    function initApp() {
-        console.log("[GPA Engine] initApp() executing v8.5 logic.");
-        const fallback = document.getElementById('fallback-boot-screen');
-        if (fallback) fallback.remove();
+    function buildUI() {
+        const wrapper = document.createElement('div');
+        wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative";
         
+        // The Rich UI Container restored from v6.8
+        wrapper.innerHTML = `
+        <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
+            <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                            <span class="material-symbols-outlined text-sky-500 text-[24px]">design_services</span>
+                            <span id="ui-gem-name" class="font-black text-lg hidden sm:block">Gemini Prompt Architect</span>
+                        </div>
+                        <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
+                        <div class="flex items-center space-x-4 w-full md:w-auto overflow-x-auto no-scrollbar">
+                            <button class="tab-btn tab-active pb-1 px-1 text-sm font-semibold whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>
+                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap hidden" data-tab="flow" style="display: none;">Visual Flowchart</button>
+                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end space-x-3 shrink-0">
+                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-teal-600 hover:bg-teal-500 text-white rounded-full transition-all shadow-md focus:outline-none" data-action="download-prompt" title="Download Prompt">
+                            <span class="material-symbols-outlined text-[18px] pointer-events-none">download</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 px-4 py-2 text-xs font-bold bg-sky-600 hover:bg-sky-50 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">
+                            <span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
+                        </button>
+                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle" aria-label="Toggle Theme">
+                            <span class="theme-icon material-symbols-outlined text-[20px] pointer-events-none">light_mode</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <div class="p-4 md:p-8 pt-4">
+                    <div id="app-content-prompt" class="space-y-6 mt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-blue-50/50 dark:bg-sky-900/10 border-2 border-sky-100 dark:border-sky-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">
+                                <h3 class="text-lg font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3">
+                                    <span class="material-symbols-outlined">analytics</span> Executive Summary
+                                </h3>
+                                <div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">
+                                    <ul class="list-none space-y-3 mb-6">
+                                        <li><strong class="text-sky-600 dark:text-sky-400">Core Objective:</strong> <span id="ui-obj">...</span></li>
+                                        <li><strong class="text-sky-600 dark:text-sky-400">Prompt Logic:</strong> <span id="ui-logic">...</span></li>
+                                        <li><strong class="text-sky-600 dark:text-sky-400">Target Output:</strong> <span id="ui-output">Optimized Prompt Artifact</span></li>
+                                    </ul>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-sky-200 dark:border-sky-800 mt-auto">
+                                    <div>
+                                        <span class="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Recommended Model</span>
+                                        <span class="font-semibold text-sky-700 dark:text-sky-300" id="ui-model">...</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Required Tool</span>
+                                        <span class="font-semibold text-sky-700 dark:text-sky-300" id="ui-tool">...</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Knowledge Base</span>
+                                        <span class="font-semibold text-sky-700 dark:text-sky-300" id="ui-kb-status">Inactive</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-indigo-50/50 dark:bg-indigo-900/10 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">
+                                <h3 class="text-lg font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-3">
+                                    <span class="material-symbols-outlined">update</span> Updates & Upgrades
+                                </h3>
+                                <div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">
+                                    <p class="mb-3 font-bold text-indigo-500" id="ui-update-title"></p>
+                                    <ul class="list-disc pl-5 space-y-2" id="ui-updates-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-sky-200 dark:border-sky-800/50 my-8">
+                        
+                        <h3 class="text-lg font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3">
+                            <span class="material-symbols-outlined">tune</span> Surgical Questions
+                        </h3>
+                        <div id="ui-questions-container" class="space-y-6"></div>
+
+                        <div class="mt-8 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-start gap-4 mb-3">
+                                <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sky-500 text-[18px]">chat</span> Feedback Summary
+                                </h4>
+                                <button class="action-btn flex items-center gap-1 px-3 py-1 text-xs font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none whitespace-nowrap" data-action="copy-answers">
+                                    <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="pointer-events-none copy-answers-label">Copy Answers</span>
+                                </button>
+                            </div>
+                            <div id="feedback-summary" class="font-mono text-[11px] text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-3 bg-gray-50 dark:bg-[#18191a] rounded" contenteditable="true" spellcheck="false">Please select options above.</div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6 md:h-[750px] mt-8">
+                            <div class="flex-[1.4] min-w-[320px] bg-white dark:bg-[#1e1f20] rounded-[28px] p-6 shadow-xl border border-gray-200 dark:border-gray-700/50 flex flex-col overflow-hidden">
+                                <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 shrink-0">
+                                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Optimized Prompt</h3>
+                                    <div id="version-controls" class="items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg" style="display: flex;">
+                                        <button id="v-prev-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                                            <span class="material-symbols-outlined text-[16px] pointer-events-none">chevron_left</span>
+                                        </button>
+                                        <span id="v-display-label" class="text-[10px] font-bold px-2 text-slate-700 dark:text-slate-300 min-w-[40px] text-center">...</span>
+                                        <button id="v-next-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                                            <span class="material-symbols-outlined text-[16px] pointer-events-none">chevron_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="gem-instructions" class="custom-scrollbar outline-none whitespace-pre-wrap text-[13px] leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>
+                            </div>
+                            
+                            <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
+                                <div class="flex flex-col h-full">
+                                    <h3 class="text-sm font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2 shrink-0">
+                                        <span class="material-symbols-outlined text-[18px]">folder_zip</span> Gem Knowledge Base
+                                    </h3>
+                                    <div class="custom-scrollbar overflow-auto flex-grow">
+                                        <p class="mb-4 text-xs italic opacity-80 text-gray-500">Download or copy these templates to upload to your Gem.</p>
+                                        <div id="ui-kb-templates-container"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
+                                <h3 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">visibility</span> Output Preview
+                                </h3>
+                                <div id="ui-preview-content" class="custom-scrollbar outline-none text-[12px] text-gray-700 dark:text-gray-400 overflow-auto flex-grow leading-relaxed" contenteditable="false" spellcheck="false">This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="app-content-flow" class="hidden animate-in fade-in duration-500">
+                        <div class="flex flex-col items-center pt-8 w-full max-w-4xl mx-auto space-y-4"></div>
+                    </div>
+
+                    <div id="app-content-setup" class="hidden animate-in fade-in duration-500 pb-12">
+                        <div class="max-w-2xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">
+                            <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined">rocket_launch</span> Deployment Guide</h3>
+                            <div class="space-y-6 text-sm text-gray-700 dark:text-gray-300">
+                                
+                                <div id="setup-option-a" class="hidden">
+                                    <h4 class="font-bold text-slate-400 text-xs uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm">
+                                        <span class="font-bold text-emerald-500 block mb-1 underline text-xs">Step 1: Copy Prompt</span>
+                                        Copy the optimized prompt from the editor panel.
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
+                                        <span class="font-bold text-emerald-500 block mb-1 underline text-xs">Step 2: Execute</span>
+                                        Paste it into a fresh chat with Gemini and execute it to see the magic.
+                                    </div>
+                                </div>
+
+                                <div id="setup-option-b" class="hidden">
+                                    <h4 class="font-bold text-slate-400 text-xs uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm">
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 1: Gem Creation</span>
+                                        Navigate to the <strong>Gem manager menu</strong> by clicking on the <strong>Gems</strong> bar in the sidebar and click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-200 dark:border-sky-700/50 shadow-sm">+ New Gem</span>.
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
+                                        <div>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 2: Name the Gem</span>
+                                            <span id="setup-gem-name" class="font-mono text-sm">...</span>
+                                        </div>
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name">
+                                            <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span>
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
+                                        <div>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 3: Describe the Gem</span>
+                                            <span id="setup-gem-desc" class="text-sm italic">...</span>
+                                        </div>
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-desc">
+                                            <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Desc</span>
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
+                                        <div>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 4: Gem Instructions</span>
+                                            Copy prompt and paste it into the <strong>Gem Instructions</strong> field.
+                                        </div>
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-prompt">
+                                            <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 5: Tool Selection</span>
+                                        In the Gem setup page, select <strong id="setup-tool-name">Canvas UI</strong> from the tools dropdown.
+                                    </div>
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 6: Knowledge Database</span>
+                                        <span class="text-sm">Download the required HTML templates from the Knowledge Base tab and upload them to your Gem.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        
+        document.body.appendChild(wrapper);
+    }
+
+    function initApp() {
+        console.log("[GPA Engine] initApp() executing v8.6 logic.");
         buildUI();
 
-        // 1. Safe Config Parsing
         const stateNode = document.getElementById('app-state');
-        if (!stateNode) throw new Error("Missing #app-state node config. The HTML file is malformed.");
+        if (!stateNode) throw new Error("Missing #app-state node config.");
         
-        let stateData;
+        let appState;
         try { 
-            stateData = JSON.parse(stateNode.textContent); 
+            appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
         } catch (err) { 
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
         }
 
-        // 2. Reflex Blocker
-        const reflexOut = stateData.meta.reflexOutput ? stateData.meta.reflexOutput.toString().trim().toUpperCase() : "";
+        // --- MODEL DETECTION CHECK (REFLEX) ---
+        const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
         if (reflexOut !== "M") {
             setTimeout(() => {
-                const loader = document.getElementById('sys-loader');
+                const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
                 if (loader) loader.style.display = 'none';
                 if (blocker) { blocker.classList.remove('hidden'); blocker.style.display = 'block'; }
@@ -216,26 +298,15 @@ console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
             return; 
         }
 
-        // 3. Payload Parsing (Handles both Base64 and Plain Text fallbacks depending on future prompts)
+        // Base64 JSON Extraction
         const dataNode = document.getElementById('raw-data');
-        let rawData = { draft: "", prompt: "", draft_b64: "", prompt_b64: "" };
+        let rawData = { draft_b64: "", prompt_b64: "" };
         if (dataNode) {
-            try { 
-                rawData = JSON.parse(dataNode.textContent); 
-            } catch (err) { 
-                try {
-                    const sanitized = dataNode.textContent.replace(/\\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '');
-                    rawData = JSON.parse(sanitized);
-                } catch(e) {
-                    throw new Error("JSON Parse Error in #raw-data payload. The LLM formatting crashed the parser.");
-                }
-            }
+            try { rawData = JSON.parse(dataNode.textContent); } catch (err) {}
         }
 
-        let draftText = rawData.draft || "";
-        let promptText = rawData.prompt || "";
-
-        // Base64 Decoders (if present)
+        let draftText = "";
+        let promptText = "";
         if (rawData.draft_b64) {
             try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
             catch(e) { draftText = atob(rawData.draft_b64); }
@@ -245,95 +316,347 @@ console.log("[GPA Engine] v8.5 - Static Endpoint Architecture Booting...");
             catch(e) { promptText = atob(rawData.prompt_b64); }
         }
 
-        // 4. UI Dashboard Population
-        document.getElementById('ui-gem-name').textContent = stateData.meta.gemName || "GPA";
-        document.getElementById('ui-obj').textContent = stateData.meta.coreObjective || "...";
-        document.getElementById('ui-logic').textContent = stateData.meta.globalPromptLogic || "...";
-        document.getElementById('ui-model').textContent = stateData.meta.recommendedModel || "...";
-        document.getElementById('ui-tool').textContent = stateData.meta.requiredTool || "...";
-        
-        const path = stateData.meta.executionPath || 'B';
-        document.getElementById('ui-path').textContent = path === 'A' ? 'Standard Prompt' : 'Custom Gem';
-        
-        const versionNum = stateData.meta.version || 'v8.5';
-        const updateTitle = document.getElementById('ui-update-title');
-        if (updateTitle) updateTitle.textContent = "Refinements Applied to " + versionNum + ":";
+        // Shared Blocks Hydration
+        window.versions = appState.versions || [{ id: "v1.0", content: "" }, { id: "Current", content: "" }];
+        if (draftText) window.versions[0].content = draftText;
+        if (promptText) window.versions[window.versions.length - 1].content = promptText;
 
-        const updatesList = document.getElementById('ui-updates-list');
-        if (stateData.updates && updatesList) {
-            stateData.updates.forEach(u => {
-                const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
+        if (window.versions && appState.sharedBlocks) {
+            window.versions = window.versions.map(v => {
+                if (v.content) {
+                    let hydratedContent = v.content;
+                    Object.keys(appState.sharedBlocks).forEach(key => {
+                        const placeholder = '{{' + key + '}}';
+                        if (hydratedContent.includes(placeholder)) {
+                            hydratedContent = hydratedContent.split(placeholder).join(appState.sharedBlocks[key]);
+                        }
+                    });
+                    v.content = hydratedContent;
+                }
+                return v;
             });
         }
 
-        // 5. Diff Engine History & Hydration
-        window.versions = [
-            { id: "v1.0", content: draftText || "Waiting for initial draft..." },
-            { id: versionNum, content: promptText || "Waiting for optimized prompt generation..." }
-        ];
-
         try {
-            const history = localStorage.getItem('gpa_versions_' + stateData.meta.gemName);
-            if (history) {
-                const savedVersions = JSON.parse(history);
+            const savedVersionsStr = localStorage.getItem('gpa_versions_' + appState.meta.gemName);
+            if (savedVersionsStr) {
+                const savedVersions = JSON.parse(savedVersionsStr);
                 if (Array.isArray(savedVersions)) {
-                    savedVersions.forEach(v => {
-                        const idx = window.versions.findIndex(x => x.id === v.id);
-                        if (idx !== -1 && !window.versions[idx].content) {
-                            window.versions[idx].content = v.content;
+                    savedVersions.forEach(savedVer => {
+                        let existingIndex = window.versions.findIndex(v => v.id === savedVer.id);
+                        if (existingIndex !== -1) {
+                            if(!window.versions[existingIndex].content) window.versions[existingIndex].content = savedVer.content;
+                        } else {
+                            window.versions.push(savedVer);
                         }
                     });
                 }
             }
         } catch(e) {}
 
-        // Save current history back to local storage
-        try { localStorage.setItem('gpa_versions_' + stateData.meta.gemName, JSON.stringify(window.versions)); } catch(e) {}
+        try { localStorage.setItem('gpa_versions_' + appState.meta.gemName, JSON.stringify(window.versions)); } catch(e) {}
 
-        // 6. Diff UI Execution
-        let curIdx = window.versions.length - 1;
-        const updateVersionUI = () => {
-            document.getElementById('v-display-label').textContent = window.versions[curIdx].id;
-            const currentData = window.versions[curIdx]?.content || '';
-            const prevData = curIdx > 0 ? window.versions[curIdx - 1]?.content : null;
-            renderDiff(document.getElementById('gem-instructions'), currentData, prevData);
-            document.getElementById('v-prev-btn').disabled = curIdx === 0;
-            document.getElementById('v-next-btn').disabled = curIdx === window.versions.length - 1;
-        };
+        // UI Dashboard Population
+        document.title = `${appState.meta.gemName} ${appState.meta.version}`;
+        document.getElementById('ui-gem-name').textContent = appState.meta.gemName;
+        document.getElementById('ui-obj').textContent = appState.meta.coreObjective;
+        document.getElementById('ui-logic').textContent = appState.meta.globalPromptLogic || appState.meta.promptLogic; 
+        document.getElementById('ui-output').textContent = appState.meta.targetOutput;
+        document.getElementById('ui-model').textContent = appState.meta.recommendedModel;
+        document.getElementById('ui-tool').textContent = appState.meta.requiredTool;
+        
+        document.getElementById('setup-gem-name').textContent = appState.meta.gemName;
+        document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective;
+        document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool;
 
-        updateVersionUI();
+        const updateTitle = document.getElementById('ui-update-title');
+        if (updateTitle) updateTitle.textContent = `Refinements Applied to ${appState.meta.version}:`;
 
-        // 7. Event Listeners
-        document.getElementById('v-prev-btn').onclick = () => { if(curIdx > 0) { curIdx--; updateVersionUI(); } };
-        document.getElementById('v-next-btn').onclick = () => { if(curIdx < window.versions.length - 1) { curIdx++; updateVersionUI(); } };
+        const updatesList = document.getElementById('ui-updates-list');
+        if (appState.updates && updatesList) {
+            appState.updates.forEach(u => {
+                const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
+            });
+        }
 
-        document.addEventListener('click', ev => {
-            const btn = ev.target.closest('.action-btn');
-            if (btn) {
-                if (btn.dataset.action === 'copy-prompt') {
-                    navigator.clipboard.writeText(document.getElementById('gem-instructions').innerText);
-                    const span = btn.querySelector('.copy-label');
-                    const orig = span.textContent; span.textContent = 'Copied!';
-                    setTimeout(() => span.textContent = orig, 2000);
-                }
-                if (btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
+        const execPath = appState.meta.executionPath || "B";
+        document.getElementById('setup-option-a').style.display = execPath === 'A' ? 'block' : 'none';
+        document.getElementById('setup-option-b').style.display = execPath === 'B' ? 'block' : 'none';
+        document.getElementById('path-a-preview').style.display = execPath === 'A' ? 'flex' : 'none';
+        document.getElementById('path-b-kb').style.display = execPath === 'B' ? 'flex' : 'none';
+
+        // KB Templates
+        const kbContainer = document.getElementById('ui-kb-templates-container');
+        const kbKeys = appState.kbTemplates ? Object.keys(appState.kbTemplates) : [];
+        document.getElementById('ui-kb-status').textContent = kbKeys.length > 0 ? `Active (${kbKeys.length} File${kbKeys.length > 1 ? 's' : ''})` : `Inactive (0 Files)`;
+
+        if (kbContainer && kbKeys.length > 0) {
+            kbKeys.forEach((filename) => {
+                const kbDiv = document.createElement('div');
+                kbDiv.className = "mb-6 p-4 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm";
+                kbDiv.innerHTML = `
+                    <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+                            <span class="material-symbols-outlined text-teal-500 text-[24px]">html</span>
+                            <div><span class="block">${filename}</span></div>
+                        </h4>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="action-btn px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="copy-kb" data-kb-key="${filename}">
+                            <span class="material-symbols-outlined text-[14px]">content_copy</span> <span class="copy-label">Copy HTML</span>
+                        </button>
+                        <button class="action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="download-kb" data-kb-key="${filename}">
+                            <span class="material-symbols-outlined text-[14px]">download</span> Download
+                        </button>
+                        <button class="action-btn px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="open-kb" data-kb-key="${filename}">
+                            <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open
+                        </button>
+                    </div>
+                `;
+                kbContainer.appendChild(kbDiv);
+            });
+        }
+
+        // Questions
+        const qContainer = document.getElementById('ui-questions-container');
+        if (qContainer && appState.questions) {
+            appState.questions.forEach((q, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = "bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table";
+                
+                let optionsHtml = '';
+                q.options.forEach((opt, oIdx) => {
+                    const optId = `${q.id}-opt${oIdx}`;
+                    optionsHtml += `
+                        <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
+                            <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
+                                <div class="flex items-start gap-3">
+                                    <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                    <div>
+                                        <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
+                                    <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                optionsHtml += `
+                    <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
+                        <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
+                            <div class="flex items-start gap-3">
+                                <input type="radio" id="${q.id}-other" name="${q.id}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                <div class="flex-grow">
+                                    <label for="${q.id}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
+                                    <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-xs pb-1" placeholder="Type custom option...">
+                                </div>
+                            </div>
+                        </td>
+                        <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed text-slate-500 align-top">
+                            Provide your own specific constraint.
+                        </td>
+                    </tr>
+                `;
+
+                qDiv.innerHTML = `
+                    <div class="mb-3 px-1">
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question}</span></h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context}</p>
+                    </div>
+                    <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-800 text-left">
+                                <th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th>
+                                <th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>${optionsHtml}</tbody>
+                    </table>
+                `;
+                qContainer.appendChild(qDiv);
+            });
+        }
+
+        function updateFeedback() {
+            let feedback = '';
+            document.querySelectorAll('.question-table').forEach((table, index) => {
+                const checked = table.querySelector('input[type="radio"]:checked');
+                const titleSpan = table.querySelector('.q-title-text');
+                const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
+                const answer = checked ? (checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value) : '______';
+                feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\n';
+            });
+            const summaryEl = document.getElementById('feedback-summary');
+            if(summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
+        }
+
+        document.addEventListener('change', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
+        document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
+
+        window.currentVersionIndex = Math.max(0, window.versions.length - 1);
+        window.updateVersionUI = function() {
+            const vPrev = document.getElementById('v-prev-btn');
+            const vNext = document.getElementById('v-next-btn');
+            const vLabel = document.getElementById('v-display-label');
+            if (vPrev) vPrev.disabled = window.currentVersionIndex <= 0;
+            if (vNext) vNext.disabled = window.currentVersionIndex >= window.versions.length - 1;
+            if (vLabel && window.versions[window.currentVersionIndex]) {
+                vLabel.textContent = window.versions[window.currentVersionIndex].id || `v${window.currentVersionIndex + 1}`;
             }
-            const tab = ev.target.closest('.tab-btn');
-            if (tab) {
-                document.querySelectorAll('.tab-btn').forEach(x => { x.classList.remove('tab-active', 'text-sky-500', 'border-b-2', 'border-sky-500'); x.classList.add('text-gray-500'); });
-                tab.classList.add('tab-active', 'text-sky-500', 'border-b-2', 'border-sky-500');
-                tab.classList.remove('text-gray-500');
-                document.getElementById('app-content-prompt').classList.toggle('hidden', tab.dataset.tab !== 'prompt');
-                document.getElementById('app-content-setup').classList.toggle('hidden', tab.dataset.tab !== 'setup');
+            const promptEl = document.getElementById('gem-instructions');
+            if (!promptEl) return;
+            const currentData = window.versions[window.currentVersionIndex]?.content || '';
+            const previousData = window.currentVersionIndex > 0 ? window.versions[window.currentVersionIndex - 1]?.content : null;
+            renderDiff(promptEl, currentData, previousData);
+        };
+        window.updateVersionUI();
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#v-prev-btn')) {
+                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); }
+                return;
+            }
+            if (e.target.closest('#v-next-btn')) {
+                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); }
+                return;
+            }
+            
+            const actionBtn = e.target.closest('.action-btn');
+            const tabBtn = e.target.closest('.tab-btn');
+            
+            if (tabBtn) {
+                const tab = tabBtn.getAttribute('data-tab');
+                ['prompt', 'flow', 'setup'].forEach(t => {
+                    const contentEl = document.getElementById('app-content-' + t);
+                    const tEl = document.querySelector(`.tab-btn[data-tab="${t}"]`);
+                    if(contentEl && tEl) {
+                        contentEl.classList.add('hidden');
+                        tEl.className = "tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap";
+                    }
+                });
+                const activeContent = document.getElementById('app-content-' + tab);
+                if(activeContent) activeContent.classList.remove('hidden');
+                tabBtn.className = "tab-btn tab-active pb-1 px-1 text-sm font-semibold transition-colors whitespace-nowrap";
+                return;
+            }
+            
+            if (!actionBtn) return;
+            const action = actionBtn.getAttribute('data-action');
+            
+            if (action === 'theme-toggle') document.documentElement.classList.toggle('dark');
+            
+            if (action === 'copy-raw') triggerCopy(actionBtn.getAttribute('data-copy-content'), actionBtn.querySelector('.copy-label'));
+            
+            if (action === 'copy-prompt' || action === 'download-prompt') {
+                const content = decodeLegacyEntities(window.versions[window.currentVersionIndex].content);
+                if (action === 'copy-prompt') triggerCopy(content, actionBtn.querySelector('.copy-label'));
+                if (action === 'download-prompt') {
+                    const blob = new Blob([content], { type: 'text/markdown' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `Optimized_Prompt_${window.versions[window.currentVersionIndex].id}.md`;
+                    a.click();
+                }
+            }
+            
+            if (action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').textContent, actionBtn.querySelector('.copy-answers-label'));
+            if (action === 'copy-text') triggerCopy(document.getElementById(actionBtn.getAttribute('data-text-target')).textContent, actionBtn.querySelector('.copy-label'));
+            
+            if (action === 'copy-kb' || action === 'download-kb' || action === 'open-kb') {
+                const key = actionBtn.getAttribute('data-kb-key');
+                let htmlContent = appState.kbTemplates[key];
+                if (!htmlContent) return;
+
+                // DOM DYNAMIC CLONING LOGIC (Restored from v6.8)
+                if (htmlContent === "DYNAMIC_UI_SHELL") {
+                    const clone = document.documentElement.cloneNode(true);
+                    const cleanEl = (selector, html = '') => { const el = clone.querySelector(selector); if(el) el.innerHTML = html; };
+                    const cleanText = (selector, txt = '...') => { const el = clone.querySelector(selector); if(el) el.textContent = txt; };
+                    const removeStyle = (selector) => { const el = clone.querySelector(selector); if(el) el.removeAttribute('style'); };
+                    const resetClass = (selector, cls) => { const el = clone.querySelector(selector); if(el) el.className = cls; };
+                    
+                    var scripts = clone.querySelectorAll('script:not([id])');
+                    for (var i = 0; i < scripts.length; i++) scripts[i].parentNode.removeChild(scripts[i]);
+                    
+                    var styles = clone.querySelectorAll('style:not([id])');
+                    for (var j = 0; j < styles.length; j++) styles[j].parentNode.removeChild(styles[j]);
+
+                    cleanText('title', '{{INSERT_GEM_NAME}}');
+                    cleanText('#ui-gem-name', '{{INSERT_GEM_NAME}}');
+                    cleanText('#ui-obj', '{{INSERT_CORE_OBJECTIVE}}');
+                    cleanText('#ui-logic', '{{INSERT_GLOBAL_PROMPT_LOGIC}}');
+                    cleanText('#ui-output', '{{INSERT_TARGET_OUTPUT}}');
+                    cleanText('#ui-model', '{{INSERT_RECOMMENDED_MODEL}}');
+                    cleanText('#ui-tool', '{{INSERT_TOOL_NAME}}');
+                    cleanText('#ui-kb-status', '{{INSERT_KB_STATUS}}');
+                    cleanText('#setup-gem-name', '{{INSERT_GEM_NAME}}');
+                    cleanText('#setup-gem-desc', '{{INSERT_GEM_DESCRIPTION}}');
+                    cleanText('#setup-tool-name', '{{INSERT_TOOL_NAME}}');
+                    cleanText('#ui-update-title', 'Refinements Applied to {{INSERT_VERSION}}:');
+                    cleanText('#feedback-summary', 'Please select options above.');
+                    cleanText('#ui-preview-content', '{{INSERT_DRAFT_PREVIEW}}');
+                    cleanText('#v-display-label', '...');
+
+                    cleanEl('#ui-updates-list', '{{INSERT_UPDATES_BULLETS}}');
+                    cleanEl('#ui-questions-container', '{{INSERT_QUESTIONS_HTML}}');
+                    cleanEl('#gem-instructions', '');
+                    cleanEl('#ui-kb-templates-container', '{{INSERT_KB_FILES_HTML}}');
+
+                    cleanEl('#version-controls', '');
+                    
+                    const overlay = clone.querySelector('#model-detection-container'); if (overlay) overlay.remove();
+                    const mainApp = clone.querySelector('#main-app-container');
+                    if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
+
+                    removeStyle('#path-a-preview'); removeStyle('#path-b-kb'); removeStyle('#setup-option-a'); removeStyle('#setup-option-b');
+                    resetClass('#setup-option-a', '{{PATH_A_VISIBILITY_BLOCK}}');
+                    resetClass('#setup-option-b', '{{PATH_B_VISIBILITY_BLOCK}}');
+                    resetClass('#path-a-preview', '{{PATH_A_VISIBILITY_FLEX}} flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden');
+                    resetClass('#path-b-kb', '{{PATH_B_VISIBILITY_FLEX}} flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden');
+
+                    const templateState = {
+                        meta: {
+                            gemName: "{{INSERT_GEM_NAME}}", version: "{{INSERT_VERSION}}", coreObjective: "{{INSERT_CORE_OBJECTIVE}}",
+                            globalPromptLogic: "{{INSERT_GLOBAL_PROMPT_LOGIC}}", targetOutput: "{{INSERT_TARGET_OUTPUT}}", recommendedModel: "{{INSERT_RECOMMENDED_MODEL}}",
+                            requiredTool: "{{INSERT_TOOL_NAME}}", kbStatus: "{{INSERT_KB_STATUS}}", executionPath: "{{INSERT_EXECUTION_PATH_A_OR_B}}"
+                        },
+                        updates: ["{{INSERT_UPDATES_BULLETS}}"],
+                        questions: [], sharedBlocks: {}, versions: [{ id: "Current", content: "" }], kbTemplates: {}
+                    };
+                    
+                    const stateEl = clone.querySelector('#app-state');
+                    if (stateEl) stateEl.textContent = '\n        ' + JSON.stringify(templateState, null, 8).replace(/<\//g, '\\u003C/').replace(/`/g, '\\u0060') + '\n    ';
+                    htmlContent = '<!DOCTYPE html>\n<html lang="en" class="dark">\n' + clone.innerHTML + '\n</html>';
+                }
+
+                if(action === 'copy-kb') {
+                    triggerCopy(htmlContent, actionBtn.querySelector('.copy-label'));
+                } else if (action === 'download-kb') {
+                    const blob = new Blob([htmlContent], { type: 'text/html' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob); a.download = key; a.click();
+                } else if (action === 'open-kb') {
+                    const newWindow = window.open();
+                    if (newWindow) { newWindow.document.open(); newWindow.document.write(htmlContent); newWindow.document.close(); }
+                }
             }
         });
 
-        // 8. Boot Success
+        // Hide boot overlay and show app
         setTimeout(() => {
-            const o = document.getElementById('sys-boot-overlay');
-            if(o) { o.style.opacity = '0'; setTimeout(() => o.style.display = 'none', 300); }
-            const m = document.getElementById('main-app-container');
-            if(m) { m.classList.remove('hidden'); m.style.display = 'flex'; }
+            const mdc = document.getElementById('model-detection-container');
+            const overlay = document.getElementById('sys-boot-overlay');
+            if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
+            if (overlay) { overlay.style.opacity = '0'; setTimeout(() => overlay.style.display = 'none', 300); }
+            const mainApp = document.getElementById('main-app-container');
+            if(mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
         }, 500);
     }
 
