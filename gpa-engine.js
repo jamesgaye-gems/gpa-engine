@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
+console.log("[GPA Engine] v8.3 - Base64 Hybrid Architecture Booting...");
 
 (function() {
     // --- GLOBAL CRASH INTERCEPTOR ---
@@ -14,122 +14,115 @@ console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
-        const uiHTML = `
-        <div id="sys-boot-overlay" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300">
-            <div id="sys-loader" class="p-10 bg-sky-500/5 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg">
-                <span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>
-                <h2 class="text-2xl font-black text-sky-600 uppercase tracking-widest mb-2">Initializing Architecture...</h2>
-                <p class="text-gray-400">Extracting Plaintext DOM Payloads...</p>
-            </div>
-            <div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">
-                <span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>
-                <h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Gemini Fast Model Detected</h2>
-                <p class="text-gray-700 dark:text-gray-300 mb-2 text-lg leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> to render the UI correctly.</p>
-            </div>
-        </div>
-
-        <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden">
-            <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                            <span class="material-symbols-outlined text-sky-500 text-[28px]">design_services</span>
-                            <span id="ui-gem-name" class="font-black text-xl hidden sm:block">Gemini Prompt Architect</span>
-                        </div>
-                        <div class="w-px h-8 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
-                        <div class="flex items-center space-x-6 w-full md:w-auto overflow-x-auto no-scrollbar">
-                            <button class="tab-btn tab-active pb-1 px-1 text-base font-semibold text-sky-500 border-b-2 border-sky-500 whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>
-                            <button class="tab-btn pb-1 px-1 text-base font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-end space-x-3 shrink-0">
-                        <button class="action-btn flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">
-                            <span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
-                        </button>
-                        <button class="action-btn w-10 h-10 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle">
-                            <span class="material-symbols-outlined text-[22px] pointer-events-none">light_mode</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto"><div class="p-4 md:p-8 pt-4">
-                <div id="app-content-prompt" class="space-y-6 mt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-blue-50/50 dark:bg-sky-900/10 border-2 border-sky-100 dark:border-sky-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">
-                            <h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">analytics</span> Executive Summary</h3>
-                            <div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow"><ul class="list-none space-y-4 mb-6">
-                                <li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Core Objective:</strong> <span id="ui-obj" class="block leading-relaxed">...</span></li>
-                                <li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Prompt Logic:</strong> <span id="ui-logic" class="block leading-relaxed">...</span></li>
-                            </ul></div>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-sky-200 dark:border-sky-800 mt-auto">
-                                <div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Recommended Model</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-model">...</span></div>
-                                <div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Required Tool</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-tool">...</span></div>
-                                <div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Execution Path</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-path">...</span></div>
-                            </div>
-                        </div>
-                        <div class="bg-indigo-50/50 dark:bg-indigo-900/10 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">
-                            <h3 class="text-xl font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">update</span> Updates & Upgrades</h3>
-                            <div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">
-                                <p class="mb-4 font-bold text-indigo-500 text-base" id="ui-update-title"></p>
-                                <ul class="list-disc pl-5 space-y-3 leading-relaxed" id="ui-updates-list"></ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="border-sky-200 dark:border-sky-800/50 my-8">
-                    <h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">tune</span> Surgical Questions</h3>
-                    <div id="ui-questions-container" class="space-y-6"></div>
-
-                    <div class="mt-8 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-                        <div class="flex items-center justify-start gap-4 mb-4">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-200 text-base flex items-center gap-2"><span class="material-symbols-outlined text-sky-500 text-[20px]">chat</span> Feedback Summary</h4>
-                            <button class="action-btn flex items-center gap-1 px-4 py-1.5 text-sm font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none whitespace-nowrap" data-action="copy-answers"><span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="pointer-events-none copy-answers-label">Copy Answers</span></button>
-                        </div>
-                        <div id="feedback-summary" class="font-mono text-sm text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-4 bg-gray-50 dark:bg-[#18191a] rounded leading-relaxed" contenteditable="true" spellcheck="false">Please select options above.</div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row gap-6 md:h-[750px] mt-8">
-                        <div class="flex-[1.4] min-w-[320px] bg-white dark:bg-[#1e1f20] rounded-[28px] p-6 shadow-xl border border-gray-200 dark:border-gray-700/50 flex flex-col overflow-hidden">
-                            <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 shrink-0">
-                                <h3 class="text-base font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Optimized Prompt</h3>
-                                <div id="version-controls" class="items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-lg flex">
-                                    <button id="v-prev-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_left</span></button>
-                                    <span id="v-display-label" class="text-xs font-bold px-3 text-slate-700 dark:text-slate-300 min-w-[50px] text-center">...</span>
-                                    <button id="v-next-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_right</span></button>
-                                </div>
-                            </div>
-                            <div id="gem-instructions" class="outline-none whitespace-pre-wrap text-sm font-mono leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>
-                        </div>
-                        
-                        <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
-                            <div class="flex flex-col h-full"><h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2 shrink-0"><span class="material-symbols-outlined text-[20px]">folder_zip</span> Gem Knowledge Base</h3><div class="overflow-auto flex-grow"><p class="mb-5 text-sm italic opacity-80 text-gray-500">Download or copy templates required for this Gem.</p><div id="ui-kb-templates-container"></div></div></div>
-                        </div>
-                        
-                        <div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
-                            <h3 class="text-base font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">visibility</span> Standard Execution</h3><div class="text-sm text-gray-700 dark:text-gray-400 flex-grow leading-relaxed">This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="app-content-setup" class="hidden pb-12">
-                    <div class="max-w-3xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 md:p-10 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">
-                        <h3 class="text-2xl font-bold mb-8 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined text-[28px]">rocket_launch</span> Deployment Guide</h3>
-                        <div class="space-y-6 text-base text-gray-700 dark:text-gray-300">
-                            <div id="setup-option-a" class="hidden">
-                                <h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>
-                                <div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-emerald-500 block mb-2 underline text-xs">Step 1: Copy Prompt</span>Return to the <strong>System Prompt</strong> tab and copy the optimized prompt.</div>
-                            </div>
-                            <div id="setup-option-b" class="hidden">
-                                <h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>
-                                <div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 1: Gem Creation</span>Click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full text-xs font-bold">+ New Gem</span> in the sidebar.</div>
-                                <div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm"><div><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 2: Name the Gem</span><span id="setup-gem-name" class="font-mono text-lg font-semibold text-slate-800 dark:text-white"></span></div><button class="action-btn flex items-center gap-1 px-4 py-2 text-sm font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name"><span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span></button></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div></div>
-        </div>`;
+        const uiHTML = [
+            '<div id="sys-boot-overlay" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300">',
+                '<div id="sys-loader" class="p-10 bg-sky-500/5 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg">',
+                    '<span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>',
+                    '<h2 class="text-2xl font-black text-sky-600 uppercase tracking-widest mb-2">Initializing Architecture...</h2>',
+                    '<p class="text-gray-400">Decoding Base64 Payloads...</p>',
+                '</div>',
+                '<div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">',
+                    '<span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>',
+                    '<h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Gemini Fast Model Detected</h2>',
+                    '<p class="text-gray-700 dark:text-gray-300 mb-2 text-lg leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> to render the UI correctly. The Fast model aggressively compresses output to save tokens, resulting in truncated code and a corrupted interface.</p>',
+                '</div>',
+            '</div>',
+            '<div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden">',
+                '<div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">',
+                    '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">',
+                        '<div class="flex items-center gap-4">',
+                            '<div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">',
+                                '<span class="material-symbols-outlined text-sky-500 text-[28px]">design_services</span>',
+                                '<span id="ui-gem-name" class="font-black text-xl hidden sm:block">Gemini Prompt Architect</span>',
+                            '</div>',
+                            '<div class="w-px h-8 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>',
+                            '<div class="flex items-center space-x-6 w-full md:w-auto overflow-x-auto no-scrollbar">',
+                                '<button class="tab-btn tab-active pb-1 px-1 text-base font-semibold text-sky-500 border-b-2 border-sky-500 whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>',
+                                '<button class="tab-btn pb-1 px-1 text-base font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>',
+                            '</div>',
+                        '</div>',
+                        '<div class="flex items-center justify-end space-x-3 shrink-0">',
+                            '<button class="action-btn flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">',
+                                '<span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>',
+                            '</button>',
+                            '<button class="action-btn w-10 h-10 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle">',
+                                '<span class="material-symbols-outlined text-[22px] pointer-events-none">light_mode</span>',
+                            '</button>',
+                        '</div>',
+                    '</div>',
+                '</div>',
+                '<div class="flex-1 overflow-y-auto"><div class="p-4 md:p-8 pt-4">',
+                    '<div id="app-content-prompt" class="space-y-6 mt-4">',
+                        '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">',
+                            '<div class="bg-blue-50/50 dark:bg-sky-900/10 border-2 border-sky-100 dark:border-sky-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">',
+                                '<h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">analytics</span> Executive Summary</h3>',
+                                '<div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow"><ul class="list-none space-y-4 mb-6">',
+                                    '<li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Core Objective:</strong> <span id="ui-obj" class="block leading-relaxed">...</span></li>',
+                                    '<li><strong class="text-sky-600 dark:text-sky-400 block mb-1">Prompt Logic:</strong> <span id="ui-logic" class="block leading-relaxed">...</span></li>',
+                                '</ul></div>',
+                                '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-sky-200 dark:border-sky-800 mt-auto">',
+                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Recommended Model</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-model">...</span></div>',
+                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Required Tool</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-tool">...</span></div>',
+                                    '<div><span class="block text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">Execution Path</span><span class="font-semibold text-sm text-sky-700 dark:text-sky-300" id="ui-path">...</span></div>',
+                                '</div>',
+                            '</div>',
+                            '<div class="bg-indigo-50/50 dark:bg-indigo-900/10 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-[28px] p-6 md:p-8 shadow-sm flex flex-col">',
+                                '<h3 class="text-xl font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">update</span> Updates & Upgrades</h3>',
+                                '<div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">',
+                                    '<p class="mb-4 font-bold text-indigo-500 text-base" id="ui-update-title"></p>',
+                                    '<ul class="list-disc pl-5 space-y-3 leading-relaxed" id="ui-updates-list"></ul>',
+                                '</div>',
+                            '</div>',
+                        '</div>',
+                        '<hr class="border-sky-200 dark:border-sky-800/50 my-8">',
+                        '<h3 class="text-xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-4 flex items-center gap-3"><span class="material-symbols-outlined text-[24px]">tune</span> Surgical Questions</h3>',
+                        '<div id="ui-questions-container" class="space-y-6"></div>',
+                        '<div class="mt-8 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl p-5 shadow-sm">',
+                            '<div class="flex items-center justify-start gap-4 mb-4">',
+                                '<h4 class="font-bold text-slate-800 dark:text-slate-200 text-base flex items-center gap-2"><span class="material-symbols-outlined text-sky-500 text-[20px]">chat</span> Feedback Summary</h4>',
+                                '<button class="action-btn flex items-center gap-1 px-4 py-1.5 text-sm font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none whitespace-nowrap" data-action="copy-answers"><span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="pointer-events-none copy-answers-label">Copy Answers</span></button>',
+                            '</div>',
+                            '<div id="feedback-summary" class="font-mono text-sm text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-4 bg-gray-50 dark:bg-[#18191a] rounded leading-relaxed" contenteditable="true" spellcheck="false">Please select options above.</div>',
+                        '</div>',
+                        '<div class="flex flex-col md:flex-row gap-6 md:h-[750px] mt-8">',
+                            '<div class="flex-[1.4] min-w-[320px] bg-white dark:bg-[#1e1f20] rounded-[28px] p-6 shadow-xl border border-gray-200 dark:border-gray-700/50 flex flex-col overflow-hidden">',
+                                '<div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 shrink-0">',
+                                    '<h3 class="text-base font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Optimized Prompt</h3>',
+                                    '<div id="version-controls" class="items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1.5 rounded-lg flex">',
+                                        '<button id="v-prev-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_left</span></button>',
+                                        '<span id="v-display-label" class="text-xs font-bold px-3 text-slate-700 dark:text-slate-300 min-w-[50px] text-center">...</span>',
+                                        '<button id="v-next-btn" class="action-btn flex items-center justify-center w-7 h-7 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><span class="material-symbols-outlined text-[18px] pointer-events-none">chevron_right</span></button>',
+                                    '</div>',
+                                '</div>',
+                                '<div id="gem-instructions" class="outline-none whitespace-pre-wrap text-sm font-mono leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>',
+                            '</div>',
+                            '<div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">',
+                                '<div class="flex flex-col h-full"><h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2 shrink-0"><span class="material-symbols-outlined text-[20px]">folder_zip</span> Gem Knowledge Base</h3><div class="overflow-auto flex-grow"><p class="mb-5 text-sm italic opacity-80 text-gray-500">Download or copy templates required for this Gem.</p><div id="ui-kb-templates-container"></div></div></div>',
+                            '</div>',
+                            '<div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">',
+                                '<h3 class="text-base font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">visibility</span> Standard Execution</h3><div class="text-sm text-gray-700 dark:text-gray-400 flex-grow leading-relaxed">This is a standard prompt intended for immediate execution in the chat window, not a Custom Gem. Copy the prompt from the left panel and paste it into a new chat.</div>',
+                            '</div>',
+                        '</div>',
+                    '</div>',
+                    '<div id="app-content-setup" class="hidden pb-12">',
+                        '<div class="max-w-3xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 md:p-10 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">',
+                            '<h3 class="text-2xl font-bold mb-8 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined text-[28px]">rocket_launch</span> Deployment Guide</h3>',
+                            '<div class="space-y-6 text-base text-gray-700 dark:text-gray-300">',
+                                '<div id="setup-option-a" class="hidden">',
+                                    '<h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>',
+                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-emerald-500 block mb-2 underline text-xs">Step 1: Copy Prompt</span>Return to the <strong>System Prompt</strong> tab and copy the optimized prompt.</div>',
+                                '</div>',
+                                '<div id="setup-option-b" class="hidden">',
+                                    '<h4 class="font-bold text-slate-400 text-sm uppercase tracking-widest mt-4 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>',
+                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm"><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 1: Gem Creation</span>Click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-3 py-1 rounded-full text-xs font-bold">+ New Gem</span> in the sidebar.</div>',
+                                    '<div class="p-5 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm"><div><span class="font-bold text-sky-500 block mb-2 underline text-xs">Step 2: Name the Gem</span><span id="setup-gem-name" class="font-mono text-lg font-semibold text-slate-800 dark:text-white"></span></div><button class="action-btn flex items-center gap-1 px-4 py-2 text-sm font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name"><span class="material-symbols-outlined text-[18px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span></button></div>',
+                                '</div>',
+                            '</div>',
+                        '</div>',
+                    '</div>',
+                '</div></div>',
+            '</div>'
+        ].join('');
         
         wrapper.innerHTML = uiHTML;
         document.body.appendChild(wrapper);
@@ -173,10 +166,7 @@ console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
 
     // --- 3. MAIN INITIALIZATION ---
     function initApp() {
-        console.log("[GPA Engine] initApp() executed.");
-        const fallback = document.getElementById('fallback-boot-screen');
-        if (fallback) fallback.remove();
-        
+        console.log("[GPA Engine] initApp() executing.");
         buildUI();
 
         // Safe Config Parsing
@@ -190,14 +180,41 @@ console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
         }
 
-        // V8.1: PLAINTEXT DOM EXTRACTION
-        // The LLM injects raw text into <script type="text/plain"> elements.
-        // It escapes the closing script tags as <\/script>. We restore them here.
-        const draftNode = document.getElementById('raw-draft-payload');
-        const promptNode = document.getElementById('raw-prompt-payload');
-        
-        const draftText = draftNode ? draftNode.textContent.replace(/<\\\/script>/g, '</script>').trim() : "";
-        const promptText = promptNode ? promptNode.textContent.replace(/<\\\/script>/g, '</script>').trim() : "";
+        // --- MODEL DETECTION CHECK (REFLEX) ---
+        const reflexOut = stateData.meta.reflexOutput ? stateData.meta.reflexOutput.toString().trim().toUpperCase() : "";
+        if (reflexOut !== "M") {
+            setTimeout(() => {
+                const loader = document.getElementById('sys-loader');
+                const blocker = document.getElementById('fast-model-blocker');
+                if (loader) loader.style.display = 'none';
+                if (blocker) { blocker.classList.remove('hidden'); blocker.style.display = 'block'; }
+            }, 800); 
+            return; 
+        }
+
+        // BASE64 JSON DECODING (Restored v7.11 Logic)
+        const dataNode = document.getElementById('raw-data');
+        let rawData = { draft_b64: "", prompt_b64: "" };
+        if (dataNode) {
+            try { 
+                rawData = JSON.parse(dataNode.textContent); 
+            } catch (err) { 
+                throw new Error("JSON Parse Error in #raw-data payload. The Base64 string was incorrectly formatted.");
+            }
+        }
+
+        let draftText = "";
+        let promptText = "";
+
+        // Safely decode base64 strings
+        if (rawData.draft_b64) {
+            try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
+            catch(e) { draftText = atob(rawData.draft_b64); }
+        }
+        if (rawData.prompt_b64) {
+            try { promptText = decodeURIComponent(escape(atob(rawData.prompt_b64))); } 
+            catch(e) { promptText = atob(rawData.prompt_b64); }
+        }
 
         // UI Dashboard Population
         document.getElementById('ui-gem-name').textContent = stateData.meta.gemName || "GPA";
@@ -209,7 +226,7 @@ console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
         const path = stateData.meta.executionPath || 'B';
         document.getElementById('ui-path').textContent = path === 'A' ? 'Standard Prompt' : 'Custom Gem';
         
-        const versionNum = stateData.meta.version || 'v8.1';
+        const versionNum = stateData.meta.version || 'v8.3';
         const updateTitle = document.getElementById('ui-update-title');
         if (updateTitle) updateTitle.textContent = "Refinements Applied to " + versionNum + ":";
 
@@ -220,36 +237,28 @@ console.log("[GPA Engine] v8.1 - DOM Plaintext Architecture Booting...");
             });
         }
 
-        // Questions hydration
-        const qContainer = document.getElementById('ui-questions-container');
-        if (stateData.questions && qContainer) {
-            stateData.questions.forEach((q, idx) => {
-                let optionsHtml = '';
-                q.options.forEach((opt, i) => {
-                    optionsHtml += '<tr class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700">' +
-                        '<td class="p-4 align-top w-[45%]"><div class="flex items-start gap-4"><input type="radio" id="' + q.id + '-o' + i + '" name="' + q.id + '" value="' + opt.value + '" class="mt-1 cursor-pointer"><div><label for="' + q.id + '-o' + i + '" class="font-bold text-sky-600 dark:text-sky-400 text-sm cursor-pointer block mb-1">' + opt.label + '</label><p class="text-sm text-slate-500">' + opt.desc + '</p></div></div></td>' +
-                        '<td class="p-4 text-sm align-top w-[55%] leading-relaxed"><span class="text-emerald-500 font-bold">Pro:</span> ' + opt.pro + '<br><span class="text-rose-500 font-bold mt-1 block">Con:</span> ' + opt.con + '</td>' +
-                    '</tr>';
-                });
-                optionsHtml += '<tr class="bg-white dark:bg-slate-900"><td class="p-4 align-top" colspan="2"><div class="flex items-start gap-4"><input type="radio" id="' + q.id + '-oth" name="' + q.id + '" value="Other" class="mt-1 cursor-pointer"><div class="flex-grow"><label for="' + q.id + '-oth" class="font-bold text-sky-600 dark:text-sky-400 text-sm cursor-pointer block mb-1">Other:</label><input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent text-sm pb-1 outline-none focus:border-sky-500 transition-colors" placeholder="Type custom option..."></div></div></td></tr>';
-                
-                const qDiv = document.createElement('div');
-                qDiv.className = "bg-white dark:bg-[#1e1f20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 question-table shadow-sm";
-                qDiv.innerHTML = '<div class="mb-4"><h4 class="font-bold text-base text-slate-800 dark:text-slate-200">' + (idx + 1) + '. <span class="q-title-text">' + q.question + '</span></h4><p class="text-sm text-slate-500 mt-2">' + q.context + '</p></div><table class="w-full text-sm border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden"><tbody>' + optionsHtml + '</tbody></table>';
-                qContainer.appendChild(qDiv);
+        // Hydrate Diff Versions
+        window.versions = [
+            { id: "v1.0", content: draftText || "No draft provided." },
+            { id: versionNum, content: promptText || "No optimized prompt generated." }
+        ];
+
+        // Hydrate Shared Blocks (If present)
+        if (stateData.sharedBlocks) {
+            window.versions = window.versions.map(v => {
+                if (v.content) {
+                    let hydrated = v.content;
+                    Object.keys(stateData.sharedBlocks).forEach(key => {
+                        const placeholder = '{{' + key + '}}';
+                        if (hydrated.includes(placeholder)) {
+                            hydrated = hydrated.split(placeholder).join(stateData.sharedBlocks[key]);
+                        }
+                    });
+                    v.content = hydrated;
+                }
+                return v;
             });
         }
-
-        document.getElementById('setup-option-a').style.display = path === 'A' ? 'block' : 'none';
-        document.getElementById('setup-option-b').style.display = path === 'B' ? 'block' : 'none';
-        document.getElementById('path-a-preview').style.display = path === 'A' ? 'flex' : 'none';
-        document.getElementById('path-b-kb').style.display = path === 'B' ? 'flex' : 'none';
-        document.getElementById('setup-gem-name').textContent = stateData.meta.gemName;
-
-        window.versions = [
-            { id: "v1.0", content: draftText },
-            { id: versionNum, content: promptText }
-        ];
 
         let curIdx = window.versions.length - 1;
         const updateVersionUI = () => {
