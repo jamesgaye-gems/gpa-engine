@@ -1,12 +1,32 @@
-console.log("[GPA Engine] v7.20 - File downloaded and parsing started.");
+console.log("[GPA Engine] v8.0 - DOM Textarea Architecture Booting...");
 
 (function() {
-    // --- 1. UI SKELETON INJECTION ---
+    // --- GLOBAL CRASH INTERCEPTOR ---
+    window.onerror = function(msg, url, line, col, err) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#7f1d1d;color:white;padding:25px;z-index:9999999;font-family:monospace;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,0.5);";
+        errorDiv.innerHTML = "<strong>GPA ENGINE FATAL ERROR:</strong><br><br>Error: " + msg + "<br>Line: " + line + "<br><br>The Javascript engine encountered an unexpected syntax crash.";
+        document.body.appendChild(errorDiv);
+        return false;
+    };
+
     function buildUI() {
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
         const uiHTML = [
+            '<div id="sys-boot-overlay" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300">',
+                '<div id="sys-loader" class="p-10 bg-sky-500/5 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg">',
+                    '<span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>',
+                    '<h2 class="text-2xl font-black text-sky-600 uppercase tracking-widest mb-2">Initializing Architecture...</h2>',
+                    '<p class="text-gray-400">Extracting DOM Payloads...</p>',
+                '</div>',
+                '<div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">',
+                    '<span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>',
+                    '<h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Gemini Fast Model Detected</h2>',
+                    '<p class="text-gray-700 dark:text-gray-300 mb-2 text-lg leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> to render the UI correctly.</p>',
+                '</div>',
+            '</div>',
             '<div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden">',
                 '<div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">',
                     '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">',
@@ -144,69 +164,29 @@ console.log("[GPA Engine] v7.20 - File downloaded and parsing started.");
         targetEl.innerHTML = htmlOutput;
     }
 
-    function triggerCopy(text, labelEl) {
-        const updateLabel = () => {
-            if(labelEl) {
-                const orig = labelEl.getAttribute('data-orig-text') || labelEl.textContent;
-                if (labelEl.textContent !== 'Copied!') labelEl.setAttribute('data-orig-text', orig);
-                labelEl.textContent = 'Copied!'; 
-                setTimeout(() => labelEl.textContent = orig, 2000); 
-            }
-        };
-        const fallbackCopy = () => {
-            const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
-            try { document.execCommand('copy'); updateLabel(); } catch (err) {}
-            document.body.removeChild(ta);
-        };
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(updateLabel).catch(() => fallbackCopy());
-        } else {
-            fallbackCopy();
-        }
-    }
-
     // --- 3. MAIN INITIALIZATION ---
     function initApp() {
-        console.log("[GPA Engine] initApp() executed.");
-        
         const fallback = document.getElementById('fallback-boot-screen');
         if (fallback) fallback.remove();
-
-        buildUI();
         
-        const stateNode = document.getElementById('app-state');
-        const dataNode = document.getElementById('raw-data');
-        if (!stateNode) { throw new Error("Missing #app-state node"); }
+        buildUI();
 
+        // Safe Config Parsing
+        const stateNode = document.getElementById('app-state');
         let stateData;
         try { 
-            stateData = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
+            stateData = JSON.parse(stateNode.textContent); 
         } catch (err) { 
-            throw new Error("JSON Parse Error in #app-state: " + err.message);
+            throw new Error("Failed to parse #app-state JSON config.");
         }
 
-        let rawData = { draft: "", prompt: "" };
-        if (dataNode) {
-            try { 
-                rawData = JSON.parse(dataNode.textContent.replace(/\u00A0/g, ' ')); 
-            } catch (err) { 
-                try {
-                    const sanitized = dataNode.textContent.replace(/\u00A0/g, ' ').replace(/\n/g, '\\n').replace(/\r/g, '');
-                    rawData = JSON.parse(sanitized);
-                } catch(e2) {
-                    throw new Error("JSON Parse Error in #raw-data payload. The LLM generated invalid JSON formatting.");
-                }
-            }
-        }
+        // NEW DOM TEXTAREA EXTRACTION (Bulletproof)
+        const draftInput = document.getElementById('raw-draft-payload');
+        const promptInput = document.getElementById('raw-prompt-payload');
+        const draftText = draftInput ? draftInput.value.trim() : "";
+        const promptText = promptInput ? promptInput.value.trim() : "";
 
-        window.versions = stateData.versions || [];
-
-        // Hydrate payloads into v1.0 and latest version
-        if (window.versions.length >= 2) {
-            if (rawData.draft) window.versions[0].content = rawData.draft.trim();
-            if (rawData.prompt) window.versions[window.versions.length - 1].content = rawData.prompt.trim();
-        }
-
+        // UI Dashboard Population
         document.getElementById('ui-gem-name').textContent = stateData.meta.gemName;
         document.getElementById('ui-obj').textContent = stateData.meta.coreObjective;
         document.getElementById('ui-logic').textContent = stateData.meta.globalPromptLogic;
@@ -216,80 +196,48 @@ console.log("[GPA Engine] v7.20 - File downloaded and parsing started.");
         const path = stateData.meta.executionPath || 'A';
         document.getElementById('ui-path').textContent = path === 'A' ? 'Standard Prompt' : 'Custom Gem';
         
-        const versionNum = stateData.meta.version || 'v7.20';
+        const versionNum = stateData.meta.version || 'v8.0';
         const updateTitle = document.getElementById('ui-update-title');
         if (updateTitle) updateTitle.textContent = "Refinements Applied to " + versionNum + ":";
 
         const updatesList = document.getElementById('ui-updates-list');
-        stateData.updates.forEach(u => {
-            const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
-        });
-
-        const qContainer = document.getElementById('ui-questions-container');
-        if (stateData.questions && qContainer) {
-            stateData.questions.forEach((q, idx) => {
-                let optionsHtml = '';
-                q.options.forEach((opt, i) => {
-                    optionsHtml += '<tr class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700">' +
-                        '<td class="p-4 align-top w-[45%]"><div class="flex items-start gap-4"><input type="radio" id="' + q.id + '-o' + i + '" name="' + q.id + '" value="' + opt.value + '" class="mt-1 cursor-pointer"><div><label for="' + q.id + '-o' + i + '" class="font-bold text-sky-600 dark:text-sky-400 text-sm cursor-pointer block mb-1">' + opt.label + '</label><p class="text-sm text-slate-500">' + opt.desc + '</p></div></div></td>' +
-                        '<td class="p-4 text-sm align-top w-[55%] leading-relaxed"><span class="text-emerald-500 font-bold">Pro:</span> ' + opt.pro + '<br><span class="text-rose-500 font-bold mt-1 block">Con:</span> ' + opt.con + '</td>' +
-                    '</tr>';
-                });
-                optionsHtml += '<tr class="bg-white dark:bg-slate-900"><td class="p-4 align-top" colspan="2"><div class="flex items-start gap-4"><input type="radio" id="' + q.id + '-oth" name="' + q.id + '" value="Other" class="mt-1 cursor-pointer"><div class="flex-grow"><label for="' + q.id + '-oth" class="font-bold text-sky-600 dark:text-sky-400 text-sm cursor-pointer block mb-1">Other:</label><input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent text-sm pb-1 outline-none focus:border-sky-500 transition-colors" placeholder="Type custom option..."></div></div></td></tr>';
-                
-                const qDiv = document.createElement('div');
-                qDiv.className = "bg-white dark:bg-[#1e1f20] p-6 rounded-2xl border border-gray-200 dark:border-gray-700 question-table shadow-sm";
-                qDiv.innerHTML = '<div class="mb-4"><h4 class="font-bold text-base text-slate-800 dark:text-slate-200">' + (idx + 1) + '. <span class="q-title-text">' + q.question + '</span></h4><p class="text-sm text-slate-500 mt-2">' + q.context + '</p></div><table class="w-full text-sm border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden"><tbody>' + optionsHtml + '</tbody></table>';
-                qContainer.appendChild(qDiv);
+        if (stateData.updates) {
+            stateData.updates.forEach(u => {
+                const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
             });
         }
 
-        document.getElementById('setup-option-a').style.display = path === 'A' ? 'block' : 'none';
-        document.getElementById('setup-option-b').style.display = path === 'B' ? 'block' : 'none';
-        document.getElementById('path-a-preview').style.display = path === 'A' ? 'flex' : 'none';
-        document.getElementById('path-b-kb').style.display = path === 'B' ? 'flex' : 'none';
-        document.getElementById('setup-gem-name').textContent = stateData.meta.gemName;
+        window.versions = [
+            { id: "v1.0", content: draftText },
+            { id: versionNum, content: promptText }
+        ];
 
-        const updateFeedback = () => {
-            let feedbackStr = '';
-            document.querySelectorAll('.question-table').forEach((table, i) => {
-                const checked = table.querySelector('input[type="radio"]:checked');
-                const title = table.querySelector('.q-title-text').innerText;
-                const answer = checked ? (checked.value === 'Other' ? (table.querySelector('.other-input').value || '______') : checked.value) : '______';
-                feedbackStr += (i + 1) + '. ' + title + ': [ ' + answer + ' ]\n';
-            });
-            document.getElementById('feedback-summary').textContent = feedbackStr.trim() || 'Please select options above.';
-        };
-        document.addEventListener('change', ev => { if(ev.target.matches('input[type="radio"],.other-input')) updateFeedback(); });
-        document.addEventListener('keyup', ev => { if(ev.target.matches('.other-input')) updateFeedback(); });
-
-        window.currentVersionIndex = Math.max(0, window.versions.length - 1);
-        window.updateVersionUI = () => {
-            document.getElementById('v-prev-btn').disabled = window.currentVersionIndex <= 0;
-            document.getElementById('v-next-btn').disabled = window.currentVersionIndex >= window.versions.length - 1;
-            document.getElementById('v-display-label').textContent = window.versions[window.currentVersionIndex]?.id || ('v' + (window.currentVersionIndex + 1));
-            
-            const currentData = window.versions[window.currentVersionIndex]?.content || '';
-            const prevData = window.currentVersionIndex > 0 ? window.versions[window.currentVersionIndex - 1]?.content : null;
+        let curIdx = window.versions.length - 1;
+        const updateVersionUI = () => {
+            document.getElementById('v-display-label').textContent = window.versions[curIdx].id;
+            const currentData = window.versions[curIdx]?.content || '';
+            const prevData = curIdx > 0 ? window.versions[curIdx - 1]?.content : null;
             renderDiff(document.getElementById('gem-instructions'), currentData, prevData);
+            document.getElementById('v-prev-btn').disabled = curIdx === 0;
+            document.getElementById('v-next-btn').disabled = curIdx === window.versions.length - 1;
         };
-        window.updateVersionUI();
+
+        updateVersionUI();
+
+        document.getElementById('v-prev-btn').onclick = () => { if(curIdx > 0) { curIdx--; updateVersionUI(); } };
+        document.getElementById('v-next-btn').onclick = () => { if(curIdx < window.versions.length - 1) { curIdx++; updateVersionUI(); } };
 
         document.addEventListener('click', ev => {
             const btn = ev.target.closest('.action-btn');
             if (btn) {
-                if (btn.dataset.action === 'copy-prompt') triggerCopy(document.getElementById('gem-instructions').innerText, btn.querySelector('.copy-label'));
-                if (btn.dataset.action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').innerText, btn.querySelector('.copy-answers-label'));
-                if (btn.dataset.action === 'copy-text') {
-                    const targetId = btn.dataset.textTarget;
-                    const textToCopy = document.getElementById(targetId).innerText;
-                    triggerCopy(textToCopy, btn.querySelector('.copy-label'));
+                if (btn.dataset.action === 'copy-prompt') {
+                    navigator.clipboard.writeText(document.getElementById('gem-instructions').innerText);
+                    const span = btn.querySelector('.copy-label');
+                    const orig = span.textContent; span.textContent = 'Copied!';
+                    setTimeout(() => span.textContent = orig, 2000);
                 }
                 if (btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
-                if (btn.id === 'v-prev-btn') { window.currentVersionIndex--; window.updateVersionUI(); }
-                if (btn.id === 'v-next-btn') { window.currentVersionIndex++; window.updateVersionUI(); }
             }
-
             const tab = ev.target.closest('.tab-btn');
             if (tab) {
                 document.querySelectorAll('.tab-btn').forEach(x => { x.classList.remove('tab-active', 'text-sky-500', 'border-b-2', 'border-sky-500'); x.classList.add('text-gray-500'); });
@@ -300,22 +248,17 @@ console.log("[GPA Engine] v7.20 - File downloaded and parsing started.");
             }
         });
 
-        // Show app
-        const mainApp = document.getElementById('main-app-container');
-        if(mainApp) {
-            mainApp.classList.remove('hidden');
-            mainApp.style.display = 'flex';
-        }
+        setTimeout(() => {
+            const o = document.getElementById('sys-boot-overlay');
+            if(o) { o.style.opacity = '0'; setTimeout(() => o.style.display = 'none', 300); }
+            const m = document.getElementById('main-app-container');
+            if(m) { m.classList.remove('hidden'); m.style.display = 'flex'; }
+        }, 500);
     }
 
-    // Try to execute immediately since the script is loaded at the bottom of the body
-    try {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
         initApp();
-    } catch(e) {
-        if (window.onerror) {
-            window.onerror(e.message, null, "initApp()", null, e);
-        } else {
-            console.error("Fatal GPA Engine Error:", e);
-        }
     }
 })();
