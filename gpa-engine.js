@@ -1,7 +1,7 @@
 /**
  * Gemini Prompt Architect (GPA) - Core Rendering Engine
  * Version: 7.19 (Pristine Standard)
- * Organization: JamesGaye-Gems / Airbus
+ * Organization: JamesGaye-Gems
  */
 (function() {
     // --- GLOBAL CRASH INTERCEPTOR ---
