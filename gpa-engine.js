@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting...");
+console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting.
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.6 logic.");
+        console.log("[GPA Engine] initApp() executing v9.7 logic.");
 
         buildUI();
 
@@ -287,14 +287,15 @@ console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting.
         
         let appState;
         try { 
+            // Our interceptor monkey-patches getElementById, so stateNode.textContent is already the hydrated string!
             appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
         } catch (err) { 
-            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
+            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
         }
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
-        if (reflexOut !== "Hi,") {
+        if (reflexOut !== "M") {
             setTimeout(() => {
                 const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
@@ -311,7 +312,7 @@ console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting.
             return; 
         }
 
-        // --- V9.6 DOM PLAINTEXT EXTRACTION ---
+        // --- V9.7 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -321,7 +322,7 @@ console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting.
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.6 DYNAMIC HISTORY HYDRATION ---
+        // --- V9.7 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
