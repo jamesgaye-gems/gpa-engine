@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.1 - Dual-Endpoint Routing & Hardened JSON Booting...");
+console.log("[GPA Engine] v9.2 - Dual-Endpoint Routing & Hardened JSON Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -200,6 +200,10 @@ console.log("[GPA Engine] v9.1 - Dual-Endpoint Routing & Hardened JSON Booting..
                         </div>
                     </div>
 
+                    <div id="app-content-flow" class="hidden animate-in fade-in duration-500">
+                        <div class="flex flex-col items-center pt-8 w-full max-w-4xl mx-auto space-y-4"></div>
+                    </div>
+
                     <div id="app-content-setup" class="hidden animate-in fade-in duration-500 pb-12">
                         <div class="max-w-2xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">
                             <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined">rocket_launch</span> Deployment Guide</h3>
@@ -274,7 +278,7 @@ console.log("[GPA Engine] v9.1 - Dual-Endpoint Routing & Hardened JSON Booting..
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.1 logic.");
+        console.log("[GPA Engine] initApp() executing v9.2 logic.");
 
         buildUI();
 
