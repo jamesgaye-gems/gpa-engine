@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.5 - Plaintext History Architecture Booting...");
+console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.5 - Plaintext History Architecture Booting...");
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.5 logic.");
+        console.log("[GPA Engine] initApp() executing v9.6 logic.");
 
         buildUI();
 
@@ -311,7 +311,7 @@ console.log("[GPA Engine] v9.5 - Plaintext History Architecture Booting...");
             return; 
         }
 
-        // --- V9.5 DOM PLAINTEXT EXTRACTION ---
+        // --- V9.6 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -321,7 +321,7 @@ console.log("[GPA Engine] v9.5 - Plaintext History Architecture Booting...");
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.5 STATELESS HISTORY HYDRATION ---
+        // --- V9.6 DYNAMIC HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
