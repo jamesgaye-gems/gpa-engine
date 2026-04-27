@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
+console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -274,7 +274,7 @@ console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v10.5 logic.");
+        console.log("[GPA Engine] initApp() executing v10.6 logic.");
 
         buildUI();
 
@@ -292,7 +292,6 @@ console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
         if (reflexOut !== "HI") {
             const mdc = document.getElementById('model-detection-container');
-            // Check if the container is naturally hardcoded in HTML
             if (mdc) {
                 const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
@@ -305,7 +304,6 @@ console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
                         triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
                     }
                     
-                    // Proceed Anyway override hook
                     if (ev.target.id === 'proceed-anyway-btn') {
                         if (blocker) blocker.style.display = 'none';
                         if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
@@ -317,23 +315,22 @@ console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
             return; 
         }
 
-        // --- V10.5 DOM PLAINTEXT EXTRACTION ---
-        const draftNode = document.getElementById('raw-draft-payload');
-        const promptNode = document.getElementById('raw-prompt-payload');
-
-        // Unescape the safe </script> tags and backtick placeholders
-        const tb = String.fromCharCode(96, 96, 96);
+        // --- V10.6 DECODER FOR HTML ENTITY PARSER PROTECTION ---
         const decodePayload = (txt) => {
             if (!txt) return "";
             return txt.replace(/<\\\/script>/gi, '</' + 'script>')
-                      .replace(/~~~/g, tb)
+                      .replace(/&#96;/g, '`')
                       .trim();
         };
+
+        // --- V10.6 DOM PLAINTEXT EXTRACTION ---
+        const draftNode = document.getElementById('raw-draft-payload');
+        const promptNode = document.getElementById('raw-prompt-payload');
 
         const draftText = decodePayload(draftNode ? draftNode.textContent : "");
         const promptText = decodePayload(promptNode ? promptNode.textContent : "");
 
-        // --- V10.5 STATELESS HISTORY HYDRATION ---
+        // --- V10.6 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
@@ -573,8 +570,7 @@ console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
                 if (!htmlContent) return;
 
                 if (htmlContent.includes("GPA Output:GPA_Unified_vX.X.html")) {
-                    // This is a safety check because we no longer have DYNAMIC_UI_SHELL. 
-                    // If the user requested an artifact export, the HTML should already be fully fleshed out in the template.
+                    // Safety check if dynamic UI shell is requested
                 }
 
                 if(action === 'copy-kb') {
