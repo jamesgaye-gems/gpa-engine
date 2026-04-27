@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting...");
+console.log("[GPA Engine] v9.5 - Plaintext History Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting..
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.3 logic.");
+        console.log("[GPA Engine] initApp() executing v9.5 logic.");
 
         buildUI();
 
@@ -311,7 +311,7 @@ console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting..
             return; 
         }
 
-        // --- V9.1 DOM PLAINTEXT EXTRACTION ---
+        // --- V9.5 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -321,7 +321,7 @@ console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting..
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.1 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
+        // --- V9.5 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
@@ -336,22 +336,6 @@ console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting..
         }
         if (promptText && !parsedVersions[parsedVersions.length - 1].content) {
             parsedVersions[parsedVersions.length - 1].content = promptText;
-        }
-
-        if (appState.sharedBlocks) {
-            parsedVersions = parsedVersions.map(v => {
-                if (v.content) {
-                    let hydratedContent = v.content;
-                    Object.keys(appState.sharedBlocks).forEach(key => {
-                        const placeholder = '{{' + key + '}}';
-                        if (hydratedContent.includes(placeholder)) {
-                            hydratedContent = hydratedContent.split(placeholder).join(appState.sharedBlocks[key]);
-                        }
-                    });
-                    v.content = hydratedContent;
-                }
-                return v;
-            });
         }
         
         window.versions = parsedVersions;
