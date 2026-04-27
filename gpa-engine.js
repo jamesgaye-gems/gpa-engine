@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.8 - Stable Plaintext & Interceptor Architecture Booting...");
+console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.8 - Stable Plaintext & Interceptor Architecture Boo
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.8 logic.");
+        console.log("[GPA Engine] initApp() executing v9.9 logic.");
 
         buildUI();
 
@@ -295,7 +295,8 @@ console.log("[GPA Engine] v9.8 - Stable Plaintext & Interceptor Architecture Boo
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
-        if (reflexOut !== "M") {
+        // We now check for exactly "HI" to pass the zero-shot cognitive test
+        if (reflexOut !== "HI") {
             setTimeout(() => {
                 const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
