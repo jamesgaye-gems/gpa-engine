@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booting...");
+console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booti
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.9 logic.");
+        console.log("[GPA Engine] initApp() executing v10.0 logic.");
 
         buildUI();
 
@@ -295,7 +295,6 @@ console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booti
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
-        // We now check for exactly "HI" to pass the zero-shot cognitive test
         if (reflexOut !== "HI") {
             setTimeout(() => {
                 const loader = document.getElementById('loading-state');
@@ -309,11 +308,21 @@ console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booti
                 if (btn && btn.dataset.action === 'copy-raw') {
                     triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
                 }
+                
+                // Add the Proceed Anyway override hook
+                if (ev.target.id === 'proceed-anyway-btn') {
+                    const mdc = document.getElementById('model-detection-container');
+                    const blocker = document.getElementById('fast-model-blocker');
+                    const mainApp = document.getElementById('main-app-container');
+                    if (blocker) blocker.style.display = 'none';
+                    if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
+                    if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
+                }
             });
             return; 
         }
 
-        // --- V9.8 DOM PLAINTEXT EXTRACTION ---
+        // --- V10.0 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -323,7 +332,7 @@ console.log("[GPA Engine] v9.9 - Zero-Shot Reflex & Plaintext Architecture Booti
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.8 STATELESS HISTORY HYDRATION ---
+        // --- V10.0 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
