@@ -1,11 +1,8 @@
-console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...");
+console.log("[GPA Engine] v10.5 - Native Boot Overlay Architecture Active...");
 
 (function() {
     window.tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
-
-    const tb = String.fromCharCode(96, 96, 96);
-    const eof = tb + 'eof';
 
     function decodeLegacyEntities(str) {
         if (!str) return '';
@@ -14,6 +11,7 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
                   .replace(/&quot;/g, '"')
                   .replace(/&#39;/g, "'")
                   .replace(/&amp;/g, '&')
+                  .replace(/\\u0060/g, '`')
                   .replace(/\\u003c/g, '<');
     }
 
@@ -273,14 +271,10 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
         </div>`;
         
         document.body.appendChild(wrapper);
-
-        const style = document.createElement('style');
-        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
-        document.head.appendChild(style);
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v10.1 logic.");
+        console.log("[GPA Engine] initApp() executing v10.5 logic.");
 
         buildUI();
 
@@ -297,49 +291,49 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
         if (reflexOut !== "HI") {
-            setTimeout(() => {
+            const mdc = document.getElementById('model-detection-container');
+            // Check if the container is naturally hardcoded in HTML
+            if (mdc) {
                 const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
                 if (loader) loader.style.display = 'none';
                 if (blocker) { blocker.classList.remove('hidden'); blocker.style.display = 'block'; }
-            }, 800); 
-
-            document.addEventListener('click', ev => {
-                const btn = ev.target.closest('.action-btn');
-                if (btn && btn.dataset.action === 'copy-raw') {
-                    triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
-                }
                 
-                // Proceed Anyway override hook
-                if (ev.target.id === 'proceed-anyway-btn') {
-                    const mdc = document.getElementById('model-detection-container');
-                    const blocker = document.getElementById('fast-model-blocker');
-                    const mainApp = document.getElementById('main-app-container');
-                    if (blocker) blocker.style.display = 'none';
-                    if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
-                    if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
-                }
-            });
+                document.addEventListener('click', ev => {
+                    const btn = ev.target.closest('.action-btn');
+                    if (btn && btn.dataset.action === 'copy-raw') {
+                        triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
+                    }
+                    
+                    // Proceed Anyway override hook
+                    if (ev.target.id === 'proceed-anyway-btn') {
+                        if (blocker) blocker.style.display = 'none';
+                        if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
+                        const mainApp = document.getElementById('main-app-container');
+                        if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
+                    }
+                });
+            }
             return; 
         }
 
-        // --- V10.1 DECODER FOR PARSER PROTECTION ---
+        // --- V10.5 DOM PLAINTEXT EXTRACTION ---
+        const draftNode = document.getElementById('raw-draft-payload');
+        const promptNode = document.getElementById('raw-prompt-payload');
+
+        // Unescape the safe </script> tags and backtick placeholders
+        const tb = String.fromCharCode(96, 96, 96);
         const decodePayload = (txt) => {
             if (!txt) return "";
             return txt.replace(/<\\\/script>/gi, '</' + 'script>')
-                      .replace(/\[TRIPLE_BACKTICK\]/g, tb)
-                      .replace(/\[EOF_MARKER\]/g, eof)
+                      .replace(/~~~/g, tb)
                       .trim();
         };
-
-        // --- V10.1 DOM PLAINTEXT EXTRACTION ---
-        const draftNode = document.getElementById('raw-draft-payload');
-        const promptNode = document.getElementById('raw-prompt-payload');
 
         const draftText = decodePayload(draftNode ? draftNode.textContent : "");
         const promptText = decodePayload(promptNode ? promptNode.textContent : "");
 
-        // --- V10.1 STATELESS HISTORY HYDRATION ---
+        // --- V10.5 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
@@ -559,7 +553,7 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
             if (action === 'copy-raw') triggerCopy(actionBtn.getAttribute('data-copy-content'), actionBtn.querySelector('.copy-label'));
             
             if (action === 'copy-prompt' || action === 'download-prompt') {
-                const content = decodeLegacyEntities(window.versions[window.currentVersionIndex].content);
+                const content = window.versions[window.currentVersionIndex].content;
                 if (action === 'copy-prompt') triggerCopy(content, actionBtn.querySelector('.copy-label'));
                 if (action === 'download-prompt') {
                     const blob = new Blob([content], { type: 'text/markdown' });
@@ -578,65 +572,9 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
                 let htmlContent = appState.kbTemplates[key];
                 if (!htmlContent) return;
 
-                if (htmlContent === "DYNAMIC_UI_SHELL") {
-                    const clone = document.documentElement.cloneNode(true);
-                    const cleanEl = (selector, html = '') => { const el = clone.querySelector(selector); if(el) el.innerHTML = html; };
-                    const cleanText = (selector, txt = '...') => { const el = clone.querySelector(selector); if(el) el.textContent = txt; };
-                    const removeStyle = (selector) => { const el = clone.querySelector(selector); if(el) el.removeAttribute('style'); };
-                    const resetClass = (selector, cls) => { const el = clone.querySelector(selector); if(el) el.className = cls; };
-                    
-                    var scripts = clone.querySelectorAll('script:not([id])');
-                    for (var i = 0; i < scripts.length; i++) scripts[i].parentNode.removeChild(scripts[i]);
-                    
-                    var styles = clone.querySelectorAll('style:not([id])');
-                    for (var j = 0; j < styles.length; j++) styles[j].parentNode.removeChild(styles[j]);
-
-                    cleanText('title', '{{INSERT_GEM_NAME}}');
-                    cleanText('#ui-gem-name', '{{INSERT_GEM_NAME}}');
-                    cleanText('#ui-obj', '{{INSERT_CORE_OBJECTIVE}}');
-                    cleanText('#ui-logic', '{{INSERT_GLOBAL_PROMPT_LOGIC}}');
-                    cleanText('#ui-output', '{{INSERT_TARGET_OUTPUT}}');
-                    cleanText('#ui-model', '{{INSERT_RECOMMENDED_MODEL}}');
-                    cleanText('#ui-tool', '{{INSERT_TOOL_NAME}}');
-                    cleanText('#ui-kb-status', '{{INSERT_KB_STATUS}}');
-                    cleanText('#setup-gem-name', '{{INSERT_GEM_NAME}}');
-                    cleanText('#setup-gem-desc', '{{INSERT_GEM_DESCRIPTION}}');
-                    cleanText('#setup-tool-name', '{{INSERT_TOOL_NAME}}');
-                    cleanText('#ui-update-title', 'Refinements Applied to {{INSERT_VERSION}}:');
-                    cleanText('#feedback-summary', 'Please select options above.');
-                    cleanText('#ui-preview-content', '{{INSERT_DRAFT_PREVIEW}}');
-                    cleanText('#v-display-label', '...');
-
-                    cleanEl('#ui-updates-list', '{{INSERT_UPDATES_BULLETS}}');
-                    cleanEl('#ui-questions-container', '{{INSERT_QUESTIONS_HTML}}');
-                    cleanEl('#gem-instructions', '');
-                    cleanEl('#ui-kb-templates-container', '{{INSERT_KB_FILES_HTML}}');
-
-                    cleanEl('#version-controls', '');
-                    
-                    const overlay = clone.querySelector('#model-detection-container'); if (overlay) overlay.remove();
-                    const mainApp = clone.querySelector('#main-app-container');
-                    if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
-
-                    removeStyle('#path-a-preview'); removeStyle('#path-b-kb'); removeStyle('#setup-option-a'); removeStyle('#setup-option-b');
-                    resetClass('#setup-option-a', '{{PATH_A_VISIBILITY_BLOCK}}');
-                    resetClass('#setup-option-b', '{{PATH_B_VISIBILITY_BLOCK}}');
-                    resetClass('#path-a-preview', '{{PATH_A_VISIBILITY_FLEX}} flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden');
-                    resetClass('#path-b-kb', '{{PATH_B_VISIBILITY_FLEX}} flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden');
-
-                    const templateState = {
-                        meta: {
-                            gemName: "{{INSERT_GEM_NAME}}", version: "{{INSERT_VERSION}}", coreObjective: "{{INSERT_CORE_OBJECTIVE}}",
-                            globalPromptLogic: "{{INSERT_GLOBAL_PROMPT_LOGIC}}", targetOutput: "{{INSERT_TARGET_OUTPUT}}", recommendedModel: "{{INSERT_RECOMMENDED_MODEL}}",
-                            requiredTool: "{{INSERT_TOOL_NAME}}", kbStatus: "{{INSERT_KB_STATUS}}", executionPath: "{{INSERT_EXECUTION_PATH_A_OR_B}}"
-                        },
-                        updates: ["{{INSERT_UPDATES_BULLETS}}"],
-                        questions: [], sharedBlocks: {}, versions: [{ id: "Current", content: "" }], kbTemplates: {}
-                    };
-                    
-                    const stateEl = clone.querySelector('#app-state');
-                    if (stateEl) stateEl.textContent = '\n        ' + JSON.stringify(templateState, null, 8).replace(/<\//g, '\\u003C/').replace(/`/g, '\\u0060') + '\n    ';
-                    htmlContent = '<!DOCTYPE html>\n<html lang="en" class="dark">\n' + clone.innerHTML + '\n</html>';
+                if (htmlContent.includes("GPA Output:GPA_Unified_vX.X.html")) {
+                    // This is a safety check because we no longer have DYNAMIC_UI_SHELL. 
+                    // If the user requested an artifact export, the HTML should already be fully fleshed out in the template.
                 }
 
                 if(action === 'copy-kb') {
@@ -653,12 +591,16 @@ console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...")
         });
 
         // Hide boot overlay and show app
-        setTimeout(() => {
-            const mdc = document.getElementById('model-detection-container');
-            if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
-            const mainApp = document.getElementById('main-app-container');
-            if(mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
-        }, 500);
+        const mdc = document.getElementById('model-detection-container');
+        if (mdc) { 
+            mdc.style.opacity = '0'; 
+            setTimeout(() => mdc.style.display = 'none', 300); 
+        }
+        const mainApp = document.getElementById('main-app-container');
+        if(mainApp) { 
+            mainApp.classList.remove('hidden'); 
+            mainApp.style.display = 'flex'; 
+        }
     }
 
     if (document.readyState === 'loading') {
