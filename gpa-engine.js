@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
+console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -69,7 +69,6 @@ console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative";
         
-        // The Rich UI Container restored from v6.8
         wrapper.innerHTML = `
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
             <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
@@ -275,7 +274,8 @@ console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v8.8 logic.");
+        console.log("[GPA Engine] initApp() executing v9.0 logic.");
+
         buildUI();
 
         const stateNode = document.getElementById('app-state');
@@ -307,48 +307,38 @@ console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
             return; 
         }
 
-        // Payload JSON Extraction
-        const dataNode = document.getElementById('raw-data');
-        let rawData = { draft: "", prompt: "", draft_b64: "", prompt_b64: "" };
-        if (dataNode) {
-            try { rawData = JSON.parse(dataNode.textContent); } catch (err) {
-                // Fallback attempt for standard escaped text
-                try {
-                    const sanitized = dataNode.textContent.replace(/\\n/g, '\\n').replace(/\n/g, '\\n').replace(/\r/g, '');
-                    rawData = JSON.parse(sanitized);
-                } catch(e2) {}
-            }
-        }
+        // --- V9.0 DOM PLAINTEXT EXTRACTION ---
+        let draftText = "";
+        let promptText = "";
 
-        let draftText = rawData.draft || "";
-        let promptText = rawData.prompt || "";
-        if (rawData.draft_b64) {
-            try { draftText = decodeURIComponent(escape(atob(rawData.draft_b64))); } 
-            catch(e) { draftText = atob(rawData.draft_b64); }
-        }
-        if (rawData.prompt_b64) {
-            try { promptText = decodeURIComponent(escape(atob(rawData.prompt_b64))); } 
-            catch(e) { promptText = atob(rawData.prompt_b64); }
-        }
+        const draftNode = document.getElementById('raw-draft-payload');
+        const promptNode = document.getElementById('raw-prompt-payload');
 
-        // Hardened Version Array Hydration (Eliminates the TypeError crash)
-        let parsedVersions = appState.versions;
-        if (!Array.isArray(parsedVersions) || parsedVersions.length === 0) {
+        if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
+        if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
+
+        // --- V9.0 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
+        let parsedVersions = appState.versions || [];
+        
+        // Ensure baseline exists
+        if (parsedVersions.length === 0) {
             parsedVersions = [
                 { id: "v1.0", content: "" }, 
                 { id: appState.meta.version || "Current", content: "" }
             ];
-        } else if (parsedVersions.length === 1) {
-            parsedVersions.unshift({ id: "v1.0", content: "" });
         }
         
-        if (draftText) parsedVersions[0].content = draftText;
-        if (promptText) parsedVersions[parsedVersions.length - 1].content = promptText;
-        
-        window.versions = parsedVersions;
+        // Always assign the latest raw payloads to the boundaries if they are empty
+        if (draftText && !parsedVersions[0].content) {
+            parsedVersions[0].content = draftText;
+        }
+        if (promptText && !parsedVersions[parsedVersions.length - 1].content) {
+            parsedVersions[parsedVersions.length - 1].content = promptText;
+        }
 
+        // Hydrate all history blocks using sharedBlocks
         if (appState.sharedBlocks) {
-            window.versions = window.versions.map(v => {
+            parsedVersions = parsedVersions.map(v => {
                 if (v.content) {
                     let hydratedContent = v.content;
                     Object.keys(appState.sharedBlocks).forEach(key => {
@@ -362,25 +352,8 @@ console.log("[GPA Engine] v8.8 - Unified Prompt Restoration Booting...");
                 return v;
             });
         }
-
-        try {
-            const savedVersionsStr = localStorage.getItem('gpa_versions_' + appState.meta.gemName);
-            if (savedVersionsStr) {
-                const savedVersions = JSON.parse(savedVersionsStr);
-                if (Array.isArray(savedVersions)) {
-                    savedVersions.forEach(savedVer => {
-                        let existingIndex = window.versions.findIndex(v => v.id === savedVer.id);
-                        if (existingIndex !== -1) {
-                            if(!window.versions[existingIndex].content) window.versions[existingIndex].content = savedVer.content;
-                        } else {
-                            window.versions.push(savedVer);
-                        }
-                    });
-                }
-            }
-        } catch(e) {}
-
-        try { localStorage.setItem('gpa_versions_' + appState.meta.gemName, JSON.stringify(window.versions)); } catch(e) {}
+        
+        window.versions = parsedVersions;
 
         // UI Dashboard Population
         document.title = `${appState.meta.gemName} ${appState.meta.version}`;
