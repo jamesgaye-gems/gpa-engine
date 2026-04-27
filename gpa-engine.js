@@ -1,8 +1,11 @@
-console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting...");
+console.log("[GPA Engine] v10.1 - Parser Protection & Dual-Endpoint Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
+
+    const tb = String.fromCharCode(96, 96, 96);
+    const eof = tb + 'eof';
 
     function decodeLegacyEntities(str) {
         if (!str) return '';
@@ -11,7 +14,6 @@ console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting..."
                   .replace(/&quot;/g, '"')
                   .replace(/&#39;/g, "'")
                   .replace(/&amp;/g, '&')
-                  .replace(/\\u0060/g, '`')
                   .replace(/\\u003c/g, '<');
     }
 
@@ -278,7 +280,7 @@ console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting..."
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v10.0 logic.");
+        console.log("[GPA Engine] initApp() executing v10.1 logic.");
 
         buildUI();
 
@@ -287,7 +289,6 @@ console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting..."
         
         let appState;
         try { 
-            // Interceptor has replaced getElementById for 'app-state'
             appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
         } catch (err) { 
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
@@ -309,7 +310,7 @@ console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting..."
                     triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
                 }
                 
-                // Add the Proceed Anyway override hook
+                // Proceed Anyway override hook
                 if (ev.target.id === 'proceed-anyway-btn') {
                     const mdc = document.getElementById('model-detection-container');
                     const blocker = document.getElementById('fast-model-blocker');
@@ -322,17 +323,23 @@ console.log("[GPA Engine] v10.0 - Unlocked UI & Historical Hydration Booting..."
             return; 
         }
 
-        // --- V10.0 DOM PLAINTEXT EXTRACTION ---
-        let draftText = "";
-        let promptText = "";
+        // --- V10.1 DECODER FOR PARSER PROTECTION ---
+        const decodePayload = (txt) => {
+            if (!txt) return "";
+            return txt.replace(/<\\\/script>/gi, '</' + 'script>')
+                      .replace(/\[TRIPLE_BACKTICK\]/g, tb)
+                      .replace(/\[EOF_MARKER\]/g, eof)
+                      .trim();
+        };
 
+        // --- V10.1 DOM PLAINTEXT EXTRACTION ---
         const draftNode = document.getElementById('raw-draft-payload');
         const promptNode = document.getElementById('raw-prompt-payload');
 
-        if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
-        if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
+        const draftText = decodePayload(draftNode ? draftNode.textContent : "");
+        const promptText = decodePayload(promptNode ? promptNode.textContent : "");
 
-        // --- V10.0 STATELESS HISTORY HYDRATION ---
+        // --- V10.1 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
