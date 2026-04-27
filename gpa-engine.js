@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Booting...");
+console.log("[GPA Engine] v9.1 - Dual-Endpoint Routing & Hardened JSON Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -200,10 +200,6 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
                         </div>
                     </div>
 
-                    <div id="app-content-flow" class="hidden animate-in fade-in duration-500">
-                        <div class="flex flex-col items-center pt-8 w-full max-w-4xl mx-auto space-y-4"></div>
-                    </div>
-
                     <div id="app-content-setup" class="hidden animate-in fade-in duration-500 pb-12">
                         <div class="max-w-2xl mx-auto bg-white dark:bg-[#1e1f20] rounded-[28px] p-8 border border-gray-200 dark:border-gray-700 shadow-xl mt-8">
                             <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-sky-500"><span class="material-symbols-outlined">rocket_launch</span> Deployment Guide</h3>
@@ -271,10 +267,14 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
         </div>`;
         
         document.body.appendChild(wrapper);
+
+        const style = document.createElement('style');
+        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
+        document.head.appendChild(style);
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.0 logic.");
+        console.log("[GPA Engine] initApp() executing v9.1 logic.");
 
         buildUI();
 
@@ -285,7 +285,7 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
         try { 
             appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
         } catch (err) { 
-            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
+            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
         }
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
@@ -307,7 +307,7 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
             return; 
         }
 
-        // --- V9.0 DOM PLAINTEXT EXTRACTION ---
+        // --- V9.1 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -317,10 +317,9 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.0 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
+        // --- V9.1 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
         let parsedVersions = appState.versions || [];
         
-        // Ensure baseline exists
         if (parsedVersions.length === 0) {
             parsedVersions = [
                 { id: "v1.0", content: "" }, 
@@ -328,7 +327,6 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
             ];
         }
         
-        // Always assign the latest raw payloads to the boundaries if they are empty
         if (draftText && !parsedVersions[0].content) {
             parsedVersions[0].content = draftText;
         }
@@ -336,7 +334,6 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
             parsedVersions[parsedVersions.length - 1].content = promptText;
         }
 
-        // Hydrate all history blocks using sharedBlocks
         if (appState.sharedBlocks) {
             parsedVersions = parsedVersions.map(v => {
                 if (v.content) {
@@ -384,7 +381,7 @@ console.log("[GPA Engine] v9.0 - Stateless History & Plaintext DOM Extraction Bo
         document.getElementById('path-a-preview').style.display = execPath === 'A' ? 'flex' : 'none';
         document.getElementById('path-b-kb').style.display = execPath === 'B' ? 'flex' : 'none';
 
-        // KB Templates
+        // KB Templates Handling
         const kbContainer = document.getElementById('ui-kb-templates-container');
         const kbKeys = appState.kbTemplates ? Object.keys(appState.kbTemplates) : [];
         document.getElementById('ui-kb-status').textContent = kbKeys.length > 0 ? `Active (${kbKeys.length} File${kbKeys.length > 1 ? 's' : ''})` : `Inactive (0 Files)`;
