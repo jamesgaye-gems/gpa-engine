@@ -294,7 +294,7 @@ console.log("[GPA Engine] v9.6 - Dynamic Plaintext History Architecture Booting.
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
-        if (reflexOut !== "M") {
+        if (reflexOut !== "Hi,") {
             setTimeout(() => {
                 const loader = document.getElementById('loading-state');
                 const blocker = document.getElementById('fast-model-blocker');
