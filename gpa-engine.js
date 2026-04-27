@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Booting...");
+console.log("[GPA Engine] v9.8 - Stable Plaintext & Interceptor Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Boo
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.7 logic.");
+        console.log("[GPA Engine] initApp() executing v9.8 logic.");
 
         buildUI();
 
@@ -287,10 +287,10 @@ console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Boo
         
         let appState;
         try { 
-            // Our interceptor monkey-patches getElementById, so stateNode.textContent is already the hydrated string!
+            // Interceptor has replaced getElementById for 'app-state'
             appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
         } catch (err) { 
-            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors.");
+            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
         }
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
@@ -312,7 +312,7 @@ console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Boo
             return; 
         }
 
-        // --- V9.7 DOM PLAINTEXT EXTRACTION ---
+        // --- V9.8 DOM PLAINTEXT EXTRACTION ---
         let draftText = "";
         let promptText = "";
 
@@ -322,7 +322,7 @@ console.log("[GPA Engine] v9.7 - Interceptor Bypass & Plaintext Architecture Boo
         if (draftNode) draftText = draftNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
         if (promptNode) promptText = promptNode.textContent.replace(/<\\\/script>/gi, '</script>').trim();
 
-        // --- V9.7 STATELESS HISTORY HYDRATION (NO LOCALSTORAGE) ---
+        // --- V9.8 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
