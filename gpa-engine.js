@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v9.2 - Dual-Endpoint Routing & Hardened JSON Booting...");
+console.log("[GPA Engine] v9.3 - Dual-Endpoint Routing & Hardened JSON Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -278,7 +278,7 @@ console.log("[GPA Engine] v9.2 - Dual-Endpoint Routing & Hardened JSON Booting..
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v9.2 logic.");
+        console.log("[GPA Engine] initApp() executing v9.3 logic.");
 
         buildUI();
 
