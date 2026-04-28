@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting...");
+console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -58,10 +58,43 @@ console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting..."
     }
 
     function buildUI() {
+        const bootLoader = document.getElementById('initial-boot-loader');
+        if (bootLoader) bootLoader.remove();
+
         const wrapper = document.createElement('div');
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
         wrapper.innerHTML = `
+        <div id="model-detection-container" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300" style="display: flex; opacity: 1;">
+            <div id="loading-state" class="p-10 bg-sky-500/5 dark:bg-sky-900/10 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg" style="display: block;">
+                <span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>
+                <h2 class="text-2xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-2">Detecting Model...</h2>
+                <p class="text-gray-700 dark:text-gray-300">Verifying architectural fidelity and execution integrity...</p>
+            </div>
+
+            <div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">
+                <span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>
+                <h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Fast Model Detected</h2>
+                <p class="text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> for advanced UI generation.</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">Activate Pro model and reply "Pro on" to resume optimization. If Pro is not available, uncheck the Canvas tool and answer exactly "text only" to activate text-only mode.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6 text-left">
+                    <div class="p-5 bg-red-600 dark:bg-red-500 text-white rounded-2xl shadow-lg border border-red-400">
+                        <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">toggle_on</span> Action: Unlock Pro</h4>
+                        <p class="text-xs mb-2 opacity-90">1. Activate <strong>Gemini 3.1 Pro</strong>.</p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="Pro on"><span class="copy-label pointer-events-none">Pro on</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
+                    </div>
+                    <div class="p-5 bg-gray-800 text-white rounded-2xl shadow-lg border border-gray-600">
+                        <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">article</span> Action: Text Only</h4>
+                        <p class="text-xs mb-2 opacity-90">1. Uncheck the <strong>Canvas tool</strong>.</p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="text only"><span class="copy-label pointer-events-none">text only</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
+                    </div>
+                </div>
+                
+                <button id="proceed-anyway-btn" class="mt-2 px-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-white text-xs font-bold rounded-lg transition-colors border border-red-700/50">Proceed Anyway (UI May Break)</button>
+            </div>
+        </div>
+
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
             <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -270,9 +303,7 @@ console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting..."
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v10.10 logic.");
-
-        buildUI();
+        console.log("[GPA Engine] initApp() executing v11.0 logic.");
 
         const stateNode = document.getElementById('app-state');
         if (!stateNode) throw new Error("Missing #app-state node config.");
@@ -283,6 +314,8 @@ console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting..."
         } catch (err) { 
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
         }
+
+        buildUI();
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
         const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
@@ -311,32 +344,32 @@ console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting..."
             return; 
         }
 
-        // --- V10.10 NATIVE DOM <div> EXTRACTION ---
-        // Native browser decoding via <div> textContent handles &#96; and &lt; natively.
-        // No manual regex unescaping is required.
+        // --- V11.0 MACRO DECODER & HYDRATION ---
+        function decodeMacro(text) {
+            if (!text) return "";
+            return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
+                       .replace(/\[\[BACKTICK\]\]/g, '`')
+                       .replace(/\[\[LESS_THAN\]\]/g, '<')
+                       .replace(/\[\[GREATER_THAN\]\]/g, '>');
+        }
+
         const draftNode = document.getElementById('raw-draft-payload');
         const promptNode = document.getElementById('raw-prompt-payload');
+        const prevNode = document.getElementById('previous-prompt-payload');
 
-        const draftText = draftNode ? draftNode.textContent.trim() : "";
-        const promptText = promptNode ? promptNode.textContent.trim() : "";
+        let parsedVersions = appState.versions || [{ id: "v1.0", content: "" }, { id: "Current", content: "" }];
 
-        // --- V10.10 STATELESS HISTORY HYDRATION ---
-        let parsedVersions = appState.versions || [];
-        
-        if (parsedVersions.length === 0) {
-            parsedVersions = [
-                { id: "v1.0", content: "" }, 
-                { id: appState.meta.version || "Current", content: "" }
-            ];
+        if (draftNode) parsedVersions[0].content = decodeMacro(draftNode.textContent).trim();
+
+        if (prevNode && prevNode.textContent.trim()) {
+            const decodedPrev = decodeMacro(prevNode.textContent);
+            const vMatch = decodedPrev.match(/version="([^"]+)"/);
+            const prevId = vMatch ? "v" + vMatch[1] : "Previous";
+            parsedVersions.splice(parsedVersions.length - 1, 0, { id: prevId, content: decodedPrev.trim() });
         }
-        
-        if (draftText && !parsedVersions[0].content) {
-            parsedVersions[0].content = draftText;
-        }
-        if (promptText && !parsedVersions[parsedVersions.length - 1].content) {
-            parsedVersions[parsedVersions.length - 1].content = promptText;
-        }
-        
+
+        if (promptNode) parsedVersions[parsedVersions.length - 1].content = decodeMacro(promptNode.textContent).trim();
+
         window.versions = parsedVersions;
 
         // UI Dashboard Population
