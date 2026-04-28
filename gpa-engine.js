@@ -1,19 +1,8 @@
-console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
+console.log("[GPA Engine] v10.10 - In-Place DOM Decoder Architecture Booting...");
 
 (function() {
     window.tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
-
-    function decodeLegacyEntities(str) {
-        if (!str) return '';
-        return str.replace(/&lt;/g, '<')
-                  .replace(/&gt;/g, '>')
-                  .replace(/&quot;/g, '"')
-                  .replace(/&#39;/g, "'")
-                  .replace(/&amp;/g, '&')
-                  .replace(/\\u0060/g, '`')
-                  .replace(/\\u003c/g, '<');
-    }
 
     function getHighlightedString(line) {
         let safeLine = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -21,15 +10,18 @@ console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
     }
 
     function renderDiff(targetEl, currentText, previousText) {
+        currentText = currentText || '';
+        previousText = previousText || '';
+        
         if (!previousText) {
-            const currLines = decodeLegacyEntities(currentText).split('\n');
+            const currLines = currentText.split('\n');
             let htmlOutput = '';
             for (let i = 0; i < currLines.length; i++) htmlOutput += getHighlightedString(currLines[i]) + '\n';
             targetEl.innerHTML = htmlOutput;
             return;
         }
-        const currLines = decodeLegacyEntities(currentText).split('\n');
-        const prevLines = decodeLegacyEntities(previousText).split('\n');
+        const currLines = currentText.split('\n');
+        const prevLines = previousText.split('\n');
         const prevSet = new Set(prevLines.map(l => l.trim()));
         let htmlOutput = '';
         for (let i = 0; i < currLines.length; i++) {
@@ -67,7 +59,7 @@ console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
 
     function buildUI() {
         const wrapper = document.createElement('div');
-        wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative";
+        wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
         wrapper.innerHTML = `
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
@@ -271,10 +263,14 @@ console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
         </div>`;
         
         document.body.appendChild(wrapper);
+
+        const style = document.createElement('style');
+        style.innerHTML = '.diff-new { background-color: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-radius: 4px; padding: 0 2px; display: inline-block; }';
+        document.head.appendChild(style);
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v10.6 logic.");
+        console.log("[GPA Engine] initApp() executing v10.10 logic.");
 
         buildUI();
 
@@ -315,22 +311,16 @@ console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
             return; 
         }
 
-        // --- V10.6 DECODER FOR HTML ENTITY PARSER PROTECTION ---
-        const decodePayload = (txt) => {
-            if (!txt) return "";
-            return txt.replace(/<\\\/script>/gi, '</' + 'script>')
-                      .replace(/&#96;/g, '`')
-                      .trim();
-        };
-
-        // --- V10.6 DOM PLAINTEXT EXTRACTION ---
+        // --- V10.10 NATIVE DOM <div> EXTRACTION ---
+        // Native browser decoding via <div> textContent handles &#96; and &lt; natively.
+        // No manual regex unescaping is required.
         const draftNode = document.getElementById('raw-draft-payload');
         const promptNode = document.getElementById('raw-prompt-payload');
 
-        const draftText = decodePayload(draftNode ? draftNode.textContent : "");
-        const promptText = decodePayload(promptNode ? promptNode.textContent : "");
+        const draftText = draftNode ? draftNode.textContent.trim() : "";
+        const promptText = promptNode ? promptNode.textContent.trim() : "";
 
-        // --- V10.6 STATELESS HISTORY HYDRATION ---
+        // --- V10.10 STATELESS HISTORY HYDRATION ---
         let parsedVersions = appState.versions || [];
         
         if (parsedVersions.length === 0) {
@@ -570,7 +560,7 @@ console.log("[GPA Engine] v10.6 - HTML Entity Parser Protection Booting...");
                 if (!htmlContent) return;
 
                 if (htmlContent.includes("GPA Output:GPA_Unified_vX.X.html")) {
-                    // Safety check if dynamic UI shell is requested
+                    // Safety check 
                 }
 
                 if(action === 'copy-kb') {
