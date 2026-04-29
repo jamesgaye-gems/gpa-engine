@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting...");
+console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.0 logic.");
+        console.log("[GPA Engine] initApp() executing v11.10 logic.");
 
         const stateNode = document.getElementById('app-state');
         if (!stateNode) throw new Error("Missing #app-state node config.");
@@ -314,6 +314,76 @@ console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting
         } catch (err) { 
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
         }
+
+        const GPA_STATIC_DICTIONARY = {
+            PERSONA_DEFS: `
+      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
+      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
+      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
+              
+            ROUTING_DETAILS: `
+  **INITIALIZATION & ROUTING:**
+  [CASE A] IF user message == "GPA update": 
+      -> Process request and update internal GPA instructions/core logic using provided html template.
+  [CASE B] IF user message is < 5 words AND != "GPA update" (Normal Greeting):
+      -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
+      -> TERMINATE.
+  [CASE C] OTHERWISE (Standard Request):
+      -> Proceed to evaluate Path 1 or Path 2 below.
+
+  **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
+  **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
+   
+  **Standard Chat Response Format:**
+  **Introduction:** State role, active mode, and persona.
+  **Feedback Analysis:** Analyze the draft/feedback.
+  **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
+  **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
+  **Canvas UI Introduction:** (If Path 1).
+  **Next Steps:** Conversational list of follow-up actions.
+  **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
+  **PRO REMINDER:** At the absolute end of EVERY message, append a reminder based on the path:
+  - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
+  - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
+              
+            ARTIFACT_TEMPLATE: `
+\`\`\`html:GPA Output:GPA_Unified_vX.X.html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</head>
+<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
+    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
+        [INITIALIZING GPA ARCHITECTURE...]
+    </div>
+    <script type="application/json" id="app-state"><\/script>
+    <script type="text/plain" id="raw-draft-payload"><\/script>
+    <script type="text/plain" id="previous-prompt-payload"><\/script>
+    <script type="text/plain" id="raw-prompt-payload"><\/script>
+    <script>
+        (function() {
+            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+            var s = document.createElement('script');
+            s.src = primarySrc;
+            s.onerror = function() {
+                var b = document.createElement('script');
+                b.src = backupSrc;
+                b.crossOrigin = "anonymous";
+                document.body.appendChild(b);
+            };
+            document.body.appendChild(s);
+        })();
+    <\/script>
+</body>
+</html>
+\`\`\`eof`
+        };
 
         buildUI();
 
@@ -344,33 +414,46 @@ console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting
             return; 
         }
 
-        // --- V11.0 MACRO DECODER & HYDRATION ---
+        // --- V11.10 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
                        .replace(/\[\[BACKTICK\]\]/g, '`')
                        .replace(/\[\[LESS_THAN\]\]/g, '<')
-                       .replace(/\[\[GREATER_THAN\]\]/g, '>');
+                       .replace(/\[\[GREATER_THAN\]\]/g, '>')
+                       .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
+                       .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
+                       .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
         }
 
+        const payloads = [];
         const draftNode = document.getElementById('raw-draft-payload');
-        const promptNode = document.getElementById('raw-prompt-payload');
         const prevNode = document.getElementById('previous-prompt-payload');
+        const promptNode = document.getElementById('raw-prompt-payload');
 
-        let parsedVersions = appState.versions || [{ id: "v1.0", content: "" }, { id: "Current", content: "" }];
+        if (draftNode && draftNode.textContent.trim()) payloads.push(draftNode.textContent.trim());
+        if (prevNode && prevNode.textContent.trim()) payloads.push(prevNode.textContent.trim());
+        if (promptNode && promptNode.textContent.trim()) payloads.push(promptNode.textContent.trim());
 
-        if (draftNode) parsedVersions[0].content = decodeMacro(draftNode.textContent).trim();
-
-        if (prevNode && prevNode.textContent.trim()) {
-            const decodedPrev = decodeMacro(prevNode.textContent);
-            const vMatch = decodedPrev.match(/version="([^"]+)"/);
-            const prevId = vMatch ? "v" + vMatch[1] : "Previous";
-            parsedVersions.splice(parsedVersions.length - 1, 0, { id: prevId, content: decodedPrev.trim() });
+        let parsedVersions = appState.versions || [];
+        if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
+        
+        // Map available payloads to versions from right to left
+        let pIdx = payloads.length - 1;
+        for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
+            parsedVersions[i].content = payloads[pIdx];
+            pIdx--;
         }
 
-        if (promptNode) parsedVersions[parsedVersions.length - 1].content = decodeMacro(promptNode.textContent).trim();
+        // DECODE MACROS FOR ALL VERSIONS (Restores history stored natively in JSON)
+        for (let i = 0; i < parsedVersions.length; i++) {
+            if (parsedVersions[i].content) {
+                parsedVersions[i].content = decodeMacro(parsedVersions[i].content);
+            }
+        }
 
-        window.versions = parsedVersions;
+        window.versions = parsedVersions.filter(v => v.content);
+        if (window.versions.length === 0) window.versions = [{ id: "Current", content: "" }];
 
         // UI Dashboard Population
         document.title = `${appState.meta.gemName} ${appState.meta.version}`;
@@ -591,10 +674,6 @@ console.log("[GPA Engine] v11.0 - Ultra-Light Macro Decoder Architecture Booting
                 const key = actionBtn.getAttribute('data-kb-key');
                 let htmlContent = appState.kbTemplates[key];
                 if (!htmlContent) return;
-
-                if (htmlContent.includes("GPA Output:GPA_Unified_vX.X.html")) {
-                    // Safety check 
-                }
 
                 if(action === 'copy-kb') {
                     triggerCopy(htmlContent, actionBtn.querySelector('.copy-label'));
