@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgrades...");
+console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgrades...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -133,10 +133,10 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
                                     <span class="material-symbols-outlined">analytics</span> Executive Summary
                                 </h3>
                                 <div class="text-sm md:text-base text-gray-700 dark:text-gray-300 flex-grow">
-                                    <ul class="list-none space-y-3 mb-6">
-                                        <li><strong class="text-sky-600 dark:text-sky-400">Core Objective:</strong> <span id="ui-obj">...</span></li>
-                                        <li><strong class="text-sky-600 dark:text-sky-400">Prompt Logic:</strong> <span id="ui-logic">...</span></li>
-                                        <li><strong class="text-sky-600 dark:text-sky-400">Target Output:</strong> <span id="ui-output">Optimized Prompt Artifact</span></li>
+                                    <ul class="list-none space-y-3 mb-6" id="summary-list">
+                                        <li><strong class="text-sky-600 dark:text-sky-400">Core Objective:</strong> <span id="summary-ui-container">...</span></li>
+                                        <li id="logic-li"><strong class="text-sky-600 dark:text-sky-400">Prompt Logic:</strong> <span id="ui-logic">...</span></li>
+                                        <li id="output-li"><strong class="text-sky-600 dark:text-sky-400">Target Output:</strong> <span id="ui-output">...</span></li>
                                     </ul>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-sky-200 dark:border-sky-800 mt-auto">
@@ -199,7 +199,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
                                         </button>
                                     </div>
                                 </div>
-                                <div id="gem-instructions" class="custom-scrollbar outline-none whitespace-pre-wrap text-[13px] leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>
+                                <div id="prompt-ui-container" class="custom-scrollbar outline-none whitespace-pre-wrap text-[13px] leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>
                             </div>
                             
                             <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
@@ -303,19 +303,20 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.12 logic.");
+        console.log("[GPA Engine] initApp() executing v11.14 logic.");
 
-        const stateNode = document.getElementById('app-state');
-        if (!stateNode) throw new Error("Missing #app-state node config.");
-        
-        let appState;
-        try { 
-            appState = JSON.parse(stateNode.textContent.replace(/\u00A0/g, ' ')); 
-        } catch (err) { 
-            throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
+        // 1. Parse the injected JSON state
+        const stateElement = document.getElementById('app-state');
+        let appState = {};
+        if (stateElement) {
+            try { 
+                appState = JSON.parse(stateElement.textContent.replace(/\u00A0/g, ' ')); 
+            } catch (err) { 
+                console.error("Failed to parse #app-state JSON. Proceeding with empty state to prevent hard crash.");
+            }
         }
 
-        // DEFENSIVE SCHEMA PATCH: Guarantee meta object exists to prevent TypeError crashes
+        // DEFENSIVE SCHEMA PATCH: Guarantee meta object exists
         appState.meta = appState.meta || {};
 
         const GPA_STATIC_DICTIONARY = {
@@ -390,8 +391,11 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
 
         buildUI();
 
-        // --- MODEL DETECTION CHECK (REFLEX) ---
-        const reflexOut = appState.meta.reflexOutput?.toString().trim().toUpperCase() || appState.reflexOutput?.toString().trim().toUpperCase() || "";
+        // BULLETPROOF EXTRACTION
+        const reflexOut = appState.meta?.reflexOutput?.toString().trim().toUpperCase() || 
+                          appState.reflexOutput?.toString().trim().toUpperCase() || 
+                          "";
+
         if (reflexOut !== "HI") {
             const mdc = document.getElementById('model-detection-container');
             if (mdc) {
@@ -417,7 +421,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
             return; 
         }
 
-        // --- V11.12 MACRO DECODER & HYDRATION ---
+        // --- V11.14 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -438,9 +442,17 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
         if (prevNode && prevNode.textContent.trim()) payloads.push(prevNode.textContent.trim());
         if (promptNode && promptNode.textContent.trim()) payloads.push(promptNode.textContent.trim());
 
-        let parsedVersions = appState.versions || [];
-        if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
+        let parsedVersions = appState.versions?.length ? appState.versions : [];
         
+        // Dynamically recreate versions if JSON flattened and missing array
+        if (parsedVersions.length === 0) {
+            let iter = appState.iterations || payloads.length || 1;
+            for (let i = 0; i < payloads.length; i++) {
+                parsedVersions.unshift({ id: `v${iter - i}`, content: "" });
+            }
+            if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
+        }
+
         // Map available payloads to versions from right to left
         let pIdx = payloads.length - 1;
         for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
@@ -448,7 +460,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
             pIdx--;
         }
 
-        // DECODE MACROS FOR ALL VERSIONS (Restores history stored natively in JSON)
+        // DECODE MACROS FOR ALL VERSIONS
         for (let i = 0; i < parsedVersions.length; i++) {
             if (parsedVersions[i].content) {
                 parsedVersions[i].content = decodeMacro(parsedVersions[i].content);
@@ -458,24 +470,41 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
         window.versions = parsedVersions.filter(v => v.content);
         if (window.versions.length === 0) window.versions = [{ id: "Current", content: "" }];
 
-        // UI Dashboard Population
-        document.title = `${appState.meta.gemName} ${appState.meta.version}`;
-        document.getElementById('ui-gem-name').textContent = appState.meta.gemName;
-        document.getElementById('ui-obj').textContent = appState.meta.coreObjective;
-        document.getElementById('ui-logic').textContent = appState.meta.globalPromptLogic || appState.meta.promptLogic; 
-        document.getElementById('ui-output').textContent = appState.meta.targetOutput;
-        document.getElementById('ui-model').textContent = appState.meta.recommendedModel;
-        document.getElementById('ui-tool').textContent = appState.meta.requiredTool;
+        // 2. Bind the JSON data to UI containers (Flattened Schema Logic)
+        document.title = `${appState.meta.gemName || 'GPA'} ${appState.iterations ? 'v' + appState.iterations : (appState.meta.version || '')}`;
+        document.getElementById('ui-gem-name').textContent = appState.meta.gemName || "Gemini Prompt Architect";
         
-        document.getElementById('setup-gem-name').textContent = appState.meta.gemName;
-        document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective;
-        document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool;
+        // Adapt Executive Summary to existing UI mapping
+        if (appState.executiveSummary) {
+            const summaryEl = document.getElementById('summary-ui-container');
+            if (summaryEl) summaryEl.textContent = appState.executiveSummary;
+            
+            // Hide missing schema logic mapping fields
+            const logicEl = document.getElementById('logic-li');
+            if (logicEl && !appState.meta.globalPromptLogic) logicEl.style.display = 'none';
+            const outputEl = document.getElementById('output-li');
+            if (outputEl && !appState.meta.targetOutput) outputEl.style.display = 'none';
+        } else {
+            const summaryEl = document.getElementById('summary-ui-container');
+            if (summaryEl) summaryEl.textContent = appState.meta.coreObjective || "N/A";
+            const uiLogic = document.getElementById('ui-logic');
+            if (uiLogic) uiLogic.textContent = appState.meta.globalPromptLogic || appState.meta.promptLogic || "N/A";
+            const uiOutput = document.getElementById('ui-output');
+            if (uiOutput) uiOutput.textContent = appState.meta.targetOutput || "N/A";
+        }
+
+        document.getElementById('ui-model').textContent = appState.meta.recommendedModel || "Gemini 3.1 Pro";
+        document.getElementById('ui-tool').textContent = appState.meta.requiredTool || "Canvas UI";
+        
+        document.getElementById('setup-gem-name').textContent = appState.meta.gemName || "Optimized Gem";
+        document.getElementById('setup-gem-desc').textContent = appState.executiveSummary || appState.meta.coreObjective || "Optimized instructions";
+        document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool || "Canvas UI";
 
         const updateTitle = document.getElementById('ui-update-title');
-        if (updateTitle) updateTitle.textContent = `Refinements Applied to ${appState.meta.version}:`;
+        if (updateTitle) updateTitle.textContent = `Refinements Applied (Iteration ${appState.iterations || 1}):`;
 
         const updatesList = document.getElementById('ui-updates-list');
-        if (appState.updates && updatesList) {
+        if (appState.updates && Array.isArray(appState.updates) && updatesList) {
             appState.updates.forEach(u => {
                 const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
             });
@@ -521,7 +550,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
              kbContainer.innerHTML = '<p class="text-sm text-gray-500">No KB templates generated for this iteration.</p>';
         }
 
-        // Questions
+        // Questions Array Validation
         const qContainer = document.getElementById('ui-questions-container');
         if (qContainer && Array.isArray(appState.questions)) {
             appState.questions.forEach((q, idx) => {
@@ -531,23 +560,24 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
                 let optionsHtml = '';
                 if (Array.isArray(q.options)) {
                     q.options.forEach((opt, oIdx) => {
-                        const optId = `${q.id}-opt${oIdx}`;
+                        const optId = `q${idx}-opt${oIdx}`;
                         optionsHtml += `
                             <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                                     <div class="flex items-start gap-3">
-                                        <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                        <input type="radio" id="${optId}" name="q${idx}" value="${opt.value || opt}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                         <div>
-                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
-                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
+                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label || opt}</label>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc || ''}</p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
+                                    ${opt.pro || opt.con ? `
                                     <ul class="list-disc pl-4 space-y-1">
-                                        <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
-                                        <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
-                                    </ul>
+                                        ${opt.pro ? `<li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>` : ''}
+                                        ${opt.con ? `<li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>` : ''}
+                                    </ul>` : ''}
                                 </td>
                             </tr>
                         `;
@@ -558,9 +588,9 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
                     <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                         <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                             <div class="flex items-start gap-3">
-                                <input type="radio" id="${q.id}-other" name="${q.id}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                <input type="radio" id="q${idx}-other" name="q${idx}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                 <div class="flex-grow">
-                                    <label for="${q.id}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
+                                    <label for="q${idx}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
                                     <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-xs pb-1" placeholder="Type custom option...">
                                 </div>
                             </div>
@@ -573,7 +603,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
 
                 qDiv.innerHTML = `
                     <div class="mb-3 px-1">
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || ''}</span></h4>
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || q}</span></h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
                     </div>
                     <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -606,6 +636,13 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
         document.addEventListener('change', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
         document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
 
+        // 3. Extract the actual prompt payload and render it
+        const promptElement = document.getElementById('raw-prompt-payload');
+        const promptContainer = document.getElementById('prompt-ui-container');
+        if (promptElement && promptContainer) {
+            // Note: Macro tokens are decoded during the mapped history array phase above.
+        }
+
         window.currentVersionIndex = Math.max(0, window.versions.length - 1);
         window.updateVersionUI = function() {
             const vPrev = document.getElementById('v-prev-btn');
@@ -616,7 +653,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
             if (vLabel && window.versions[window.currentVersionIndex]) {
                 vLabel.textContent = window.versions[window.currentVersionIndex].id || `v${window.currentVersionIndex + 1}`;
             }
-            const promptEl = document.getElementById('gem-instructions');
+            const promptEl = document.getElementById('prompt-ui-container') || document.getElementById('gem-instructions');
             if (!promptEl) return;
             const currentData = window.versions[window.currentVersionIndex]?.content || '';
             const previousData = window.currentVersionIndex > 0 ? window.versions[window.currentVersionIndex - 1]?.content : null;
@@ -677,7 +714,7 @@ console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgr
             
             if (action === 'copy-kb' || action === 'download-kb' || action === 'open-kb') {
                 const key = actionBtn.getAttribute('data-kb-key');
-                let htmlContent = appState.kbTemplates[key];
+                let htmlContent = appState.kbTemplates ? appState.kbTemplates[key] : null;
                 if (!htmlContent) return;
 
                 if(action === 'copy-kb') {
