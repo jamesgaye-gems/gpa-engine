@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgrades...");
+console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.14 logic.");
+        console.log("[GPA Engine] initApp() executing v11.15 logic.");
 
         // 1. Parse the injected JSON state
         const stateElement = document.getElementById('app-state');
@@ -421,7 +421,7 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
             return; 
         }
 
-        // --- V11.14 MACRO DECODER & HYDRATION ---
+        // --- V11.15 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -550,34 +550,49 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
              kbContainer.innerHTML = '<p class="text-sm text-gray-500">No KB templates generated for this iteration.</p>';
         }
 
-        // Questions Array Validation
+        // --- QUESTIONS MAPPING (WITH STRING COMPILER) ---
         const qContainer = document.getElementById('ui-questions-container');
         if (qContainer && Array.isArray(appState.questions)) {
-            appState.questions.forEach((q, idx) => {
-                const qDiv = document.createElement('div');
-                qDiv.className = "bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table";
-                
+            
+            // 1. COMPILER: Convert flat strings to the expected object structure
+            const compiledQuestions = appState.questions.map((q, idx) => {
+                if (typeof q === 'string') {
+                    return {
+                        id: `q${idx + 1}`,
+                        title: `Refinement ${idx + 1}`,
+                        question: q,
+                        context: "Select an option to refine the prompt generation.",
+                        options: [
+                            { value: "Yes", label: "Yes, apply this.", desc: "Implement the suggested refinement.", pro: "Greater specificity.", con: "May narrow scope." },
+                            { value: "No", label: "No, skip this.", desc: "Maintain current trajectory.", pro: "Faster execution.", con: "Missed optimization." }
+                        ]
+                    };
+                }
+                return q; // If it's already an object, leave it alone
+            });
+
+            // 2. RENDER: Use the compiled objects
+            compiledQuestions.forEach((q, idx) => {
                 let optionsHtml = '';
                 if (Array.isArray(q.options)) {
                     q.options.forEach((opt, oIdx) => {
-                        const optId = `q${idx}-opt${oIdx}`;
+                        const optId = `${q.id}-opt${oIdx}`;
                         optionsHtml += `
                             <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                                     <div class="flex items-start gap-3">
-                                        <input type="radio" id="${optId}" name="q${idx}" value="${opt.value || opt}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                        <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                         <div>
-                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label || opt}</label>
-                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc || ''}</p>
+                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
-                                    ${opt.pro || opt.con ? `
                                     <ul class="list-disc pl-4 space-y-1">
-                                        ${opt.pro ? `<li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>` : ''}
-                                        ${opt.con ? `<li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>` : ''}
-                                    </ul>` : ''}
+                                        <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
+                                        <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
+                                    </ul>
                                 </td>
                             </tr>
                         `;
@@ -588,9 +603,9 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
                     <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                         <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                             <div class="flex items-start gap-3">
-                                <input type="radio" id="q${idx}-other" name="q${idx}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                <input type="radio" id="${q.id}-other" name="${q.id}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                 <div class="flex-grow">
-                                    <label for="q${idx}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
+                                    <label for="${q.id}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
                                     <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-xs pb-1" placeholder="Type custom option...">
                                 </div>
                             </div>
@@ -601,22 +616,23 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
                     </tr>
                 `;
 
-                qDiv.innerHTML = `
-                    <div class="mb-3 px-1">
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || q}</span></h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
+                qContainer.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table mb-6">
+                        <div class="mb-3 px-1">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || q}</span></h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
+                        </div>
+                        <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-800 text-left">
+                                    <th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th>
+                                    <th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th>
+                                </tr>
+                            </thead>
+                            <tbody>${optionsHtml}</tbody>
+                        </table>
                     </div>
-                    <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
-                        <thead>
-                            <tr class="bg-gray-100 dark:bg-gray-800 text-left">
-                                <th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th>
-                                <th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th>
-                            </tr>
-                        </thead>
-                        <tbody>${optionsHtml}</tbody>
-                    </table>
-                `;
-                qContainer.appendChild(qDiv);
+                `);
             });
         }
 
@@ -637,9 +653,8 @@ console.log("[GPA Engine] v11.14 - Flattened Schema Binding & Sanitization Upgra
         document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
 
         // 3. Extract the actual prompt payload and render it
-        const promptElement = document.getElementById('raw-prompt-payload');
         const promptContainer = document.getElementById('prompt-ui-container');
-        if (promptElement && promptContainer) {
+        if (promptContainer && window.versions.length > 0) {
             // Note: Macro tokens are decoded during the mapped history array phase above.
         }
 
