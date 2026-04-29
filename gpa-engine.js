@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...");
+console.log("[GPA Engine] v11.12 - Multi-Version History & Defensive Schema Upgrades...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.10 logic.");
+        console.log("[GPA Engine] initApp() executing v11.12 logic.");
 
         const stateNode = document.getElementById('app-state');
         if (!stateNode) throw new Error("Missing #app-state node config.");
@@ -314,6 +314,9 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
         } catch (err) { 
             throw new Error("Failed to parse #app-state JSON. The config block contains syntax errors (likely an unescaped literal line break).");
         }
+
+        // DEFENSIVE SCHEMA PATCH: Guarantee meta object exists to prevent TypeError crashes
+        appState.meta = appState.meta || {};
 
         const GPA_STATIC_DICTIONARY = {
             PERSONA_DEFS: `
@@ -388,7 +391,7 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
         buildUI();
 
         // --- MODEL DETECTION CHECK (REFLEX) ---
-        const reflexOut = appState.meta.reflexOutput ? appState.meta.reflexOutput.toString().trim().toUpperCase() : "";
+        const reflexOut = appState.meta.reflexOutput?.toString().trim().toUpperCase() || appState.reflexOutput?.toString().trim().toUpperCase() || "";
         if (reflexOut !== "HI") {
             const mdc = document.getElementById('model-detection-container');
             if (mdc) {
@@ -414,7 +417,7 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
             return; 
         }
 
-        // --- V11.10 MACRO DECODER & HYDRATION ---
+        // --- V11.12 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -520,34 +523,36 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
 
         // Questions
         const qContainer = document.getElementById('ui-questions-container');
-        if (qContainer && appState.questions) {
+        if (qContainer && Array.isArray(appState.questions)) {
             appState.questions.forEach((q, idx) => {
                 const qDiv = document.createElement('div');
                 qDiv.className = "bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table";
                 
                 let optionsHtml = '';
-                q.options.forEach((opt, oIdx) => {
-                    const optId = `${q.id}-opt${oIdx}`;
-                    optionsHtml += `
-                        <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
-                            <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
-                                <div class="flex items-start gap-3">
-                                    <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
-                                    <div>
-                                        <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
+                if (Array.isArray(q.options)) {
+                    q.options.forEach((opt, oIdx) => {
+                        const optId = `${q.id}-opt${oIdx}`;
+                        optionsHtml += `
+                            <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
+                                <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
+                                    <div class="flex items-start gap-3">
+                                        <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                        <div>
+                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
-                                <ul class="list-disc pl-4 space-y-1">
-                                    <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
-                                    <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
-                                </ul>
-                            </td>
-                        </tr>
-                    `;
-                });
+                                </td>
+                                <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
+                                    <ul class="list-disc pl-4 space-y-1">
+                                        <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
+                                        <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
 
                 optionsHtml += `
                     <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
@@ -568,8 +573,8 @@ console.log("[GPA Engine] v11.10 - Multi-Version History & Hydration Upgrades...
 
                 qDiv.innerHTML = `
                     <div class="mb-3 px-1">
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question}</span></h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context}</p>
+                        <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || ''}</span></h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
                     </div>
                     <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
                         <thead>
