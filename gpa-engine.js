@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.18 - Public - Schema Expansion & Versioning Parity...");
+console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography Upgrades & Deduplication...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.18 - Public - Schema Expansion & Versioning Parity
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.18 logic.");
+        console.log("[GPA Engine] initApp() executing v11.19 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -337,7 +337,8 @@ console.log("[GPA Engine] v11.18 - Public - Schema Expansion & Versioning Parity
   **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
    
   **Standard Chat Response Format:**
-  **Introduction:** State role, active mode, and persona.
+  **[Prompt: Topic]** (Turn 1 only)
+  **Introduction:** (Case C Turn 1 only) State role, active mode, and persona.
   **Feedback Analysis:** Analyze the draft/feedback.
   **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
   **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
@@ -418,7 +419,7 @@ console.log("[GPA Engine] v11.18 - Public - Schema Expansion & Versioning Parity
             return; 
         }
 
-        // --- V11.18 MACRO DECODER & HYDRATION ---
+        // --- V11.19 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
