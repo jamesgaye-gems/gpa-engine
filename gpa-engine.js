@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches...");
+console.log("[GPA Engine] v11.17 - Public - Semantic Diff Tracking, Typography Upgrades & Deduplication...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -235,57 +235,57 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                             <div class="space-y-6 text-sm text-gray-700 dark:text-gray-300">
                                 
                                 <div id="setup-option-a" class="hidden">
-                                    <h4 class="font-bold text-slate-400 text-xs uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>
+                                    <h4 class="font-bold text-slate-400 text-[13px] uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Standard Prompt Execution</h4>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm">
-                                        <span class="font-bold text-emerald-500 block mb-1 underline text-xs">Step 1: Copy Prompt</span>
+                                        <span class="font-bold text-emerald-500 block mb-1 underline text-[13px]">Step 1: Copy Prompt</span>
                                         Copy the optimized prompt from the editor panel.
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
-                                        <span class="font-bold text-emerald-500 block mb-1 underline text-xs">Step 2: Execute</span>
+                                        <span class="font-bold text-emerald-500 block mb-1 underline text-[13px]">Step 2: Execute</span>
                                         Paste it into a fresh chat with Gemini and execute it to see the magic.
                                     </div>
                                 </div>
 
                                 <div id="setup-option-b" class="hidden">
-                                    <h4 class="font-bold text-slate-400 text-xs uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>
+                                    <h4 class="font-bold text-slate-400 text-[13px] uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm">
-                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 1: Gem Creation</span>
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 1: Gem Creation</span>
                                         Navigate to the <strong>Gem manager menu</strong> by clicking on the <strong>Gems</strong> bar in the sidebar and click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-200 dark:border-sky-700/50 shadow-sm">+ New Gem</span>.
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
                                         <div>
-                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 2: Name the Gem</span>
-                                            <span id="setup-gem-name" class="font-mono text-sm">...</span>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 2: Name the Gem</span>
+                                            <span id="setup-gem-name" class="font-mono text-[13px]">...</span>
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span>
                                         </button>
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
                                         <div>
-                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 3: Describe the Gem</span>
-                                            <span id="setup-gem-desc" class="text-sm italic">...</span>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 3: Describe the Gem</span>
+                                            <span id="setup-gem-desc" class="text-[13px] italic">...</span>
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-desc">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-desc">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Desc</span>
                                         </button>
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
                                         <div>
-                                            <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 4: Gem Instructions</span>
+                                            <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 4: Gem Instructions</span>
                                             Copy prompt and paste it into the <strong>Gem Instructions</strong> field.
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-prompt">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-prompt">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
                                         </button>
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
-                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 5: Tool Selection</span>
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 5: Tool Selection</span>
                                         In the Gem setup page, select <strong id="setup-tool-name">Canvas UI</strong> from the tools dropdown.
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm" id="setup-step-6">
-                                        <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 6: Knowledge Database</span>
-                                        <span class="text-sm">Download the required HTML templates from the Knowledge Base tab and upload them to your Gem.</span>
+                                        <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 6: Knowledge Database</span>
+                                        <span class="text-[13px]">Download the required HTML templates from the Knowledge Base tab and upload them to your Gem.</span>
                                     </div>
                                 </div>
                             </div>
@@ -303,9 +303,8 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.16 logic.");
+        console.log("[GPA Engine] initApp() executing v11.17 logic.");
 
-        // 1. Parse the injected JSON state
         const stateElement = document.getElementById('app-state');
         let appState = {};
         if (stateElement) {
@@ -316,7 +315,6 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
             }
         }
 
-        // DEFENSIVE SCHEMA PATCH: Guarantee meta object exists
         appState.meta = appState.meta || {};
 
         const GPA_STATIC_DICTIONARY = {
@@ -391,7 +389,6 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
 
         buildUI();
 
-        // BULLETPROOF EXTRACTION
         const reflexOut = appState.meta?.reflexOutput?.toString().trim().toUpperCase() || 
                           appState.reflexOutput?.toString().trim().toUpperCase() || 
                           "";
@@ -421,7 +418,7 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
             return; 
         }
 
-        // --- V11.16 MACRO DECODER & HYDRATION ---
+        // --- V11.17 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -433,18 +430,20 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                        .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
         }
 
-        const payloads = [];
+        const rawPayloads = [];
         const draftNode = document.getElementById('raw-draft-payload');
         const prevNode = document.getElementById('previous-prompt-payload');
         const promptNode = document.getElementById('raw-prompt-payload');
 
-        if (draftNode && draftNode.textContent.trim()) payloads.push(draftNode.textContent.trim());
-        if (prevNode && prevNode.textContent.trim()) payloads.push(prevNode.textContent.trim());
-        if (promptNode && promptNode.textContent.trim()) payloads.push(promptNode.textContent.trim());
+        if (draftNode && draftNode.textContent.trim()) rawPayloads.push(draftNode.textContent.trim());
+        if (prevNode && prevNode.textContent.trim()) rawPayloads.push(prevNode.textContent.trim());
+        if (promptNode && promptNode.textContent.trim()) rawPayloads.push(promptNode.textContent.trim());
+
+        // Deduplicate logically identical sequential payloads
+        const payloads = rawPayloads.filter((item, pos, arr) => pos === 0 || item !== arr[pos - 1]);
 
         let parsedVersions = appState.versions?.length ? appState.versions : [];
         
-        // Dynamically recreate versions using float math based on current payload sequence
         if (parsedVersions.length === 0 && payloads.length > 0) {
             let currentVerStr = appState.meta?.version || "1.0";
             let match = currentVerStr.match(/v?(\d+\.\d+)/);
@@ -455,14 +454,18 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                 let vId = `v${(currentVerNum - (offset * 0.01)).toFixed(2)}`;
                 parsedVersions.push({ id: vId, content: payloads[i] });
             }
-            // Guarantee string match for the newest version
             if (parsedVersions.length > 0) {
                 parsedVersions[parsedVersions.length - 1].id = `v${currentVerStr.replace('v','')}`;
             }
         }
         if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
 
-        // DECODE MACROS FOR ALL VERSIONS
+        let pIdx = payloads.length - 1;
+        for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
+            parsedVersions[i].content = payloads[pIdx];
+            pIdx--;
+        }
+
         for (let i = 0; i < parsedVersions.length; i++) {
             if (parsedVersions[i].content) {
                 parsedVersions[i].content = decodeMacro(parsedVersions[i].content);
@@ -472,7 +475,7 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
         window.versions = parsedVersions.filter(v => v.content);
         if (window.versions.length === 0) window.versions = [{ id: "Current", content: "" }];
 
-        // 2. Bind the JSON data to UI containers
+        // UI Dashboard Binding
         document.title = `${appState.meta.gemName || 'GPA'} ${appState.meta.version || (appState.iterations ? 'v' + appState.iterations : '')}`;
         document.getElementById('ui-gem-name').textContent = appState.meta.gemName || "Gemini Prompt Architect";
         
@@ -509,13 +512,12 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
         document.getElementById('ui-model').textContent = appState.meta.recommendedModel || "Gemini 3.1 Pro";
         document.getElementById('ui-tool').textContent = appState.meta.requiredTool || "Canvas UI";
         
-        // Setup Tab Bindings
         document.getElementById('setup-gem-name').textContent = appState.meta.gemName || "Optimized Gem";
         document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective || appState.meta.promptLogic || appState.executiveSummary || "Optimized instructions";
         document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool || "Canvas UI";
 
         const updateTitle = document.getElementById('ui-update-title');
-        if (updateTitle) updateTitle.textContent = `Refinements Applied (Iteration ${appState.iterations || 1}):`;
+        if (updateTitle) updateTitle.textContent = `Refinements Applied (v${appState.meta?.version || appState.iterations || '1.0'}):`;
 
         const updatesList = document.getElementById('ui-updates-list');
         if (appState.updates && Array.isArray(appState.updates) && updatesList) {
@@ -530,7 +532,6 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
         document.getElementById('path-a-preview').style.display = execPath === 'A' ? 'flex' : 'none';
         document.getElementById('path-b-kb').style.display = execPath === 'B' ? 'flex' : 'none';
 
-        // KB Templates Handling
         const kbContainer = document.getElementById('ui-kb-templates-container');
         const kbKeys = appState.kbTemplates ? Object.keys(appState.kbTemplates) : [];
         document.getElementById('ui-kb-status').textContent = kbKeys.length > 0 ? `Active (${kbKeys.length} File${kbKeys.length > 1 ? 's' : ''})` : `Inactive (0 Files)`;
@@ -561,19 +562,16 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                 kbContainer.appendChild(kbDiv);
             });
         } else if (kbContainer) {
-             kbContainer.innerHTML = '<p class="text-sm text-gray-500">No KB templates generated for this iteration.</p>';
+             kbContainer.innerHTML = '<p class="text-[13px] text-gray-500">No KB templates generated for this iteration.</p>';
         }
 
         const setupStep6 = document.getElementById('setup-step-6');
         if (setupStep6 && kbKeys.length === 0) {
-            setupStep6.innerHTML = '<span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 6: Knowledge Database</span><span class="text-sm">No KB templates generated for this iteration.</span>';
+            setupStep6.innerHTML = '<span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 6: Knowledge Database</span><span class="text-[13px]">No KB templates generated for this iteration.</span>';
         }
 
-        // --- QUESTIONS MAPPING (WITH STRING COMPILER) ---
         const qContainer = document.getElementById('ui-questions-container');
         if (qContainer && Array.isArray(appState.questions)) {
-            
-            // 1. COMPILER: Convert flat strings to the expected object structure
             const compiledQuestions = appState.questions.map((q, idx) => {
                 if (typeof q === 'string') {
                     return {
@@ -587,31 +585,31 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                         ]
                     };
                 }
-                return q; // If it's already an object, leave it alone
+                return q;
             });
 
-            // 2. RENDER: Use the compiled objects
             compiledQuestions.forEach((q, idx) => {
                 let optionsHtml = '';
                 if (Array.isArray(q.options)) {
                     q.options.forEach((opt, oIdx) => {
-                        const optId = `${q.id}-opt${oIdx}`;
+                        const optId = `q${idx}-opt${oIdx}`;
                         optionsHtml += `
                             <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                                     <div class="flex items-start gap-3">
-                                        <input type="radio" id="${optId}" name="${q.id}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                        <input type="radio" id="${optId}" name="q${idx}" value="${opt.value || opt}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                         <div>
-                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
-                                            <p class="text-xs text-slate-500 dark:text-slate-400">${opt.desc}</p>
+                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label || opt}</label>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">${opt.desc || ''}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed align-top">
+                                <td class="border border-gray-300 dark:border-gray-700 p-3 text-[13px] leading-relaxed align-top">
+                                    ${opt.pro || opt.con ? `
                                     <ul class="list-disc pl-4 space-y-1">
-                                        <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
-                                        <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
-                                    </ul>
+                                        ${opt.pro ? `<li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>` : ''}
+                                        ${opt.con ? `<li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>` : ''}
+                                    </ul>` : ''}
                                 </td>
                             </tr>
                         `;
@@ -622,14 +620,14 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                     <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                         <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                             <div class="flex items-start gap-3">
-                                <input type="radio" id="${q.id}-other" name="${q.id}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                <input type="radio" id="q${idx}-other" name="q${idx}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                 <div class="flex-grow">
-                                    <label for="${q.id}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
-                                    <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-xs pb-1" placeholder="Type custom option...">
+                                    <label for="q${idx}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
+                                    <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-sm pb-1" placeholder="Type custom option...">
                                 </div>
                             </div>
                         </td>
-                        <td class="border border-gray-300 dark:border-gray-700 p-3 text-xs leading-relaxed text-slate-500 align-top">
+                        <td class="border border-gray-300 dark:border-gray-700 p-3 text-[13px] leading-relaxed text-slate-500 align-top">
                             Provide your own specific constraint.
                         </td>
                     </tr>
@@ -639,7 +637,7 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
                     <div class="bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table mb-6">
                         <div class="mb-3 px-1">
                             <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || q}</span></h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
                         </div>
                         <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
                             <thead>
@@ -671,10 +669,8 @@ console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches..
         document.addEventListener('change', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
         document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
 
-        // 3. Extract the actual prompt payload and render it
         const promptContainer = document.getElementById('prompt-ui-container');
         if (promptContainer && window.versions.length > 0) {
-            // Note: Macro tokens are decoded during the mapped history array phase above.
         }
 
         window.currentVersionIndex = Math.max(0, window.versions.length - 1);
