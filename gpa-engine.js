@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.17 - Public - Semantic Diff Tracking, Typography Upgrades & Deduplication...");
+console.log("[GPA Engine] v11.18 - Public - Schema Expansion & Versioning Parity...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.17 - Public - Semantic Diff Tracking, Typography U
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.17 logic.");
+        console.log("[GPA Engine] initApp() executing v11.18 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -418,7 +418,7 @@ console.log("[GPA Engine] v11.17 - Public - Semantic Diff Tracking, Typography U
             return; 
         }
 
-        // --- V11.17 MACRO DECODER & HYDRATION ---
+        // --- V11.18 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
