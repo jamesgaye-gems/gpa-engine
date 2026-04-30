@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...");
+console.log("[GPA Engine] v11.16 - Semantic Diff Tracking & UI Binding Patches...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -283,7 +283,7 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
                                         <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 5: Tool Selection</span>
                                         In the Gem setup page, select <strong id="setup-tool-name">Canvas UI</strong> from the tools dropdown.
                                     </div>
-                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm">
+                                    <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mt-4 shadow-sm" id="setup-step-6">
                                         <span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 6: Knowledge Database</span>
                                         <span class="text-sm">Download the required HTML templates from the Knowledge Base tab and upload them to your Gem.</span>
                                     </div>
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.15 logic.");
+        console.log("[GPA Engine] initApp() executing v11.16 logic.");
 
         // 1. Parse the injected JSON state
         const stateElement = document.getElementById('app-state');
@@ -421,7 +421,7 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
             return; 
         }
 
-        // --- V11.15 MACRO DECODER & HYDRATION ---
+        // --- V11.16 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -444,21 +444,23 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
 
         let parsedVersions = appState.versions?.length ? appState.versions : [];
         
-        // Dynamically recreate versions if JSON flattened and missing array
-        if (parsedVersions.length === 0) {
-            let iter = appState.iterations || payloads.length || 1;
+        // Dynamically recreate versions using float math based on current payload sequence
+        if (parsedVersions.length === 0 && payloads.length > 0) {
+            let currentVerStr = appState.meta?.version || "1.0";
+            let match = currentVerStr.match(/v?(\d+\.\d+)/);
+            let currentVerNum = match ? parseFloat(match[1]) : 1.0;
+            
             for (let i = 0; i < payloads.length; i++) {
-                parsedVersions.unshift({ id: `v${iter - i}`, content: "" });
+                let offset = payloads.length - 1 - i; 
+                let vId = `v${(currentVerNum - (offset * 0.01)).toFixed(2)}`;
+                parsedVersions.push({ id: vId, content: payloads[i] });
             }
-            if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
+            // Guarantee string match for the newest version
+            if (parsedVersions.length > 0) {
+                parsedVersions[parsedVersions.length - 1].id = `v${currentVerStr.replace('v','')}`;
+            }
         }
-
-        // Map available payloads to versions from right to left
-        let pIdx = payloads.length - 1;
-        for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
-            parsedVersions[i].content = payloads[pIdx];
-            pIdx--;
-        }
+        if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
 
         // DECODE MACROS FOR ALL VERSIONS
         for (let i = 0; i < parsedVersions.length; i++) {
@@ -470,20 +472,31 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
         window.versions = parsedVersions.filter(v => v.content);
         if (window.versions.length === 0) window.versions = [{ id: "Current", content: "" }];
 
-        // 2. Bind the JSON data to UI containers (Flattened Schema Logic)
-        document.title = `${appState.meta.gemName || 'GPA'} ${appState.iterations ? 'v' + appState.iterations : (appState.meta.version || '')}`;
+        // 2. Bind the JSON data to UI containers
+        document.title = `${appState.meta.gemName || 'GPA'} ${appState.meta.version || (appState.iterations ? 'v' + appState.iterations : '')}`;
         document.getElementById('ui-gem-name').textContent = appState.meta.gemName || "Gemini Prompt Architect";
         
-        // Adapt Executive Summary to existing UI mapping
         if (appState.executiveSummary) {
             const summaryEl = document.getElementById('summary-ui-container');
             if (summaryEl) summaryEl.textContent = appState.executiveSummary;
             
-            // Hide missing schema logic mapping fields
             const logicEl = document.getElementById('logic-li');
-            if (logicEl && !appState.meta.globalPromptLogic) logicEl.style.display = 'none';
+            const uiLogic = document.getElementById('ui-logic');
+            if (appState.meta?.promptLogic || appState.meta?.globalPromptLogic) {
+                if (logicEl) logicEl.style.display = 'list-item';
+                if (uiLogic) uiLogic.textContent = appState.meta.promptLogic || appState.meta.globalPromptLogic;
+            } else {
+                if (logicEl) logicEl.style.display = 'none';
+            }
+
             const outputEl = document.getElementById('output-li');
-            if (outputEl && !appState.meta.targetOutput) outputEl.style.display = 'none';
+            const uiOutput = document.getElementById('ui-output');
+            if (appState.meta?.targetOutput) {
+                if (outputEl) outputEl.style.display = 'list-item';
+                if (uiOutput) uiOutput.textContent = appState.meta.targetOutput;
+            } else {
+                if (outputEl) outputEl.style.display = 'none';
+            }
         } else {
             const summaryEl = document.getElementById('summary-ui-container');
             if (summaryEl) summaryEl.textContent = appState.meta.coreObjective || "N/A";
@@ -496,8 +509,9 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
         document.getElementById('ui-model').textContent = appState.meta.recommendedModel || "Gemini 3.1 Pro";
         document.getElementById('ui-tool').textContent = appState.meta.requiredTool || "Canvas UI";
         
+        // Setup Tab Bindings
         document.getElementById('setup-gem-name').textContent = appState.meta.gemName || "Optimized Gem";
-        document.getElementById('setup-gem-desc').textContent = appState.executiveSummary || appState.meta.coreObjective || "Optimized instructions";
+        document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective || appState.meta.promptLogic || appState.executiveSummary || "Optimized instructions";
         document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool || "Canvas UI";
 
         const updateTitle = document.getElementById('ui-update-title');
@@ -548,6 +562,11 @@ console.log("[GPA Engine] v11.15 - String Compiler & Flattened Schema Binding...
             });
         } else if (kbContainer) {
              kbContainer.innerHTML = '<p class="text-sm text-gray-500">No KB templates generated for this iteration.</p>';
+        }
+
+        const setupStep6 = document.getElementById('setup-step-6');
+        if (setupStep6 && kbKeys.length === 0) {
+            setupStep6.innerHTML = '<span class="font-bold text-sky-500 block mb-1 underline text-xs">Step 6: Knowledge Database</span><span class="text-sm">No KB templates generated for this iteration.</span>';
         }
 
         // --- QUESTIONS MAPPING (WITH STRING COMPILER) ---
