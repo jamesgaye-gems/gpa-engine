@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography Upgrades & Deduplication...");
+console.log("[GPA Engine] v11.21 - Public - Override Bypass Logic & Routing Expansion...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography U
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.19 logic.");
+        console.log("[GPA Engine] initApp() executing v11.21 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -327,10 +327,12 @@ console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography U
   **INITIALIZATION & ROUTING:**
   [CASE A] IF user message == "GPA update": 
       -> Process request and update internal GPA instructions/core logic using provided html template.
-  [CASE B] IF user message is < 5 words AND != "GPA update" (Normal Greeting):
+  [CASE B] IF user message == "Pro on" OR user message == "text only":
+      -> Set "proOverride": true in JSON schema. Proceed to optimize the PREVIOUSLY submitted draft. Execute Path 1 (for "Pro on") or Path 2 (for "text only").
+  [CASE C] IF user message is < 5 words AND != "GPA update" AND != "Pro on" AND != "text only" (Normal Greeting):
       -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
       -> TERMINATE.
-  [CASE C] OTHERWISE (Standard Request):
+  [CASE D] OTHERWISE (Standard Request):
       -> Proceed to evaluate Path 1 or Path 2 below.
 
   **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
@@ -338,7 +340,7 @@ console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography U
    
   **Standard Chat Response Format:**
   **[Prompt: Topic]** (Turn 1 only)
-  **Introduction:** (Case C Turn 1 only) State role, active mode, and persona.
+  **Introduction:** (Turn 1 only) State role, active mode, and persona.
   **Feedback Analysis:** Analyze the draft/feedback.
   **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
   **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
@@ -394,7 +396,9 @@ console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography U
                           appState.reflexOutput?.toString().trim().toUpperCase() || 
                           "";
 
-        if (reflexOut !== "HI") {
+        const isProOverride = appState.meta?.proOverride === true || appState.proOverride === true || appState.meta?.proOverride === "true" || appState.proOverride === "true";
+
+        if (reflexOut !== "HI" && !isProOverride) {
             const mdc = document.getElementById('model-detection-container');
             if (mdc) {
                 const loader = document.getElementById('loading-state');
@@ -419,7 +423,7 @@ console.log("[GPA Engine] v11.19 - Public - Semantic Diff Tracking, Typography U
             return; 
         }
 
-        // --- V11.19 MACRO DECODER & HYDRATION ---
+        // --- V11.21 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
