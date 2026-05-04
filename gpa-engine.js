@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.21 - Public - Override Bypass Logic & Routing Expansion...");
+console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override Bypasses...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.21 - Public - Override Bypass Logic & Routing Expa
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.21 logic.");
+        console.log("[GPA Engine] initApp() executing v11.22 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -423,7 +423,7 @@ console.log("[GPA Engine] v11.21 - Public - Override Bypass Logic & Routing Expa
             return; 
         }
 
-        // --- V11.21 MACRO DECODER & HYDRATION ---
+        // --- V11.22 MACRO DECODER & HYDRATION ---
         function decodeMacro(text) {
             if (!text) return "";
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
@@ -435,36 +435,28 @@ console.log("[GPA Engine] v11.21 - Public - Override Bypass Logic & Routing Expa
                        .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
         }
 
-        const rawPayloads = [];
+        const payloads = [];
         const draftNode = document.getElementById('raw-draft-payload');
         const prevNode = document.getElementById('previous-prompt-payload');
         const promptNode = document.getElementById('raw-prompt-payload');
 
-        if (draftNode && draftNode.textContent.trim()) rawPayloads.push(draftNode.textContent.trim());
-        if (prevNode && prevNode.textContent.trim()) rawPayloads.push(prevNode.textContent.trim());
-        if (promptNode && promptNode.textContent.trim()) rawPayloads.push(promptNode.textContent.trim());
-
-        // Deduplicate logically identical sequential payloads
-        const payloads = rawPayloads.filter((item, pos, arr) => pos === 0 || item !== arr[pos - 1]);
+        if (draftNode && draftNode.textContent.trim()) payloads.push(draftNode.textContent.trim());
+        if (prevNode && prevNode.textContent.trim()) payloads.push(prevNode.textContent.trim());
+        if (promptNode && promptNode.textContent.trim()) payloads.push(promptNode.textContent.trim());
 
         let parsedVersions = appState.versions?.length ? appState.versions : [];
         
+        // Dynamic Version Recreation using Regex Extraction (v11.22 Patch)
         if (parsedVersions.length === 0 && payloads.length > 0) {
-            let currentVerStr = appState.meta?.version || "1.0";
-            let match = currentVerStr.match(/v?(\d+\.\d+)/);
-            let currentVerNum = match ? parseFloat(match[1]) : 1.0;
-            
             for (let i = 0; i < payloads.length; i++) {
-                let offset = payloads.length - 1 - i; 
-                let vId = `v${(currentVerNum - (offset * 0.01)).toFixed(2)}`;
+                let vMatch = payloads[i].match(/system_prompt version="([^"]+)"/);
+                let vId = vMatch ? `v${vMatch[1]}` : `v1.${i}`;
                 parsedVersions.push({ id: vId, content: payloads[i] });
-            }
-            if (parsedVersions.length > 0) {
-                parsedVersions[parsedVersions.length - 1].id = `v${currentVerStr.replace('v','')}`;
             }
         }
         if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
 
+        // Map available payloads to versions from right to left
         let pIdx = payloads.length - 1;
         for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
             parsedVersions[i].content = payloads[pIdx];
