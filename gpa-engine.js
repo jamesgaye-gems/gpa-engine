@@ -386,9 +386,16 @@ console.log("[GPA Engine] v11.30 - Airbus - DOM-Based Reverse History & Root Res
             const domNodes = document.querySelectorAll('.gpa-history-node');
             if (domNodes.length > 0) {
                 const anchorIndex = versionsArray.length - 1;
-                // Backwards compatibility for older tag names
+                
+                // CRITICAL FIX: Ensure we grab innerHTML for pristine formatting
                 const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
-                let compiledState = promptNode ? decodeMacro(promptNode.textContent) : (versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "");
+                let compiledState = "";
+                
+                if (promptNode && promptNode.innerHTML) {
+                    compiledState = decodeMacro(promptNode.innerHTML.trim());
+                } else if (versionsArray[anchorIndex].content) {
+                    compiledState = decodeMacro(versionsArray[anchorIndex].content);
+                }
 
                 if (targetIndex === anchorIndex) return compiledState;
 
