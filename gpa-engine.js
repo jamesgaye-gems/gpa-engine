@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override Bypasses...");
+console.log("[GPA Engine] v11.30 - Airbus - DOM-Based Reverse History & Root Restoration...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -303,7 +303,7 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
     }
 
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.22 logic.");
+        console.log("[GPA Engine] initApp() executing v11.30 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -315,81 +315,36 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
             }
         }
 
-        appState.meta = appState.meta || {};
+        // --- V11.33 RECURSIVE MACRO DECODER (PATCH) ---
+        function decodeMacro(text) {
+            if (typeof text !== 'string') return text;
+            return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
+                       .replace(/\[\[BACKTICK\]\]/g, '`')
+                       .replace(/\[\[LESS_THAN\]\]/g, '<')
+                       .replace(/\[\[GREATER_THAN\]\]/g, '>')
+                       // --- NEW SYNTAX DRIFT PROTECTIONS ---
+                       .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
+                       .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
+                       .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
+                       .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
+                       // ------------------------------------
+                       .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
+                       .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
+                       .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
+        }
 
-        const GPA_STATIC_DICTIONARY = {
-            PERSONA_DEFS: `
-      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
-      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
-      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
-              
-            ROUTING_DETAILS: `
-  **INITIALIZATION & ROUTING:**
-  [CASE A] IF user message == "GPA update": 
-      -> Process request and update internal GPA instructions/core logic using provided html template.
-  [CASE B] IF user message == "Pro on" OR user message == "text only":
-      -> Set "proOverride": true in JSON schema. Proceed to optimize the PREVIOUSLY submitted draft. Execute Path 1 (for "Pro on") or Path 2 (for "text only").
-  [CASE C] IF user message is < 5 words AND != "GPA update" AND != "Pro on" AND != "text only" (Normal Greeting):
-      -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
-      -> TERMINATE.
-  [CASE D] OTHERWISE (Standard Request):
-      -> Proceed to evaluate Path 1 or Path 2 below.
+        function recursiveDecode(obj) {
+            if (typeof obj === 'string') return decodeMacro(obj);
+            if (Array.isArray(obj)) return obj.map(recursiveDecode);
+            if (obj !== null && typeof obj === 'object') {
+                for (let key in obj) { obj[key] = recursiveDecode(obj[key]); }
+            }
+            return obj;
+        }
 
-  **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
-  **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
-   
-  **Standard Chat Response Format:**
-  **[Prompt: Topic]** (Turn 1 only)
-  **Introduction:** (Turn 1 only) State role, active mode, and persona.
-  **Feedback Analysis:** Analyze the draft/feedback.
-  **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
-  **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
-  **Canvas UI Introduction:** (If Path 1).
-  **Next Steps:** Conversational list of follow-up actions.
-  **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
-  **PRO REMINDER:** At the absolute end of EVERY message, append a reminder based on the path:
-  - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
-  - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
-              
-            ARTIFACT_TEMPLATE: `
-\`\`\`html:GPA Output:GPA_Unified_vX.X.html
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPA Optimizer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-</head>
-<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
-    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
-        [INITIALIZING GPA ARCHITECTURE...]
-    </div>
-    <script type="application/json" id="app-state"><\/script>
-    <script type="text/plain" id="raw-draft-payload"><\/script>
-    <script type="text/plain" id="previous-prompt-payload"><\/script>
-    <script type="text/plain" id="raw-prompt-payload"><\/script>
-    <script>
-        (function() {
-            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
-            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
-            var s = document.createElement('script');
-            s.src = primarySrc;
-            s.onerror = function() {
-                var b = document.createElement('script');
-                b.src = backupSrc;
-                b.crossOrigin = "anonymous";
-                document.body.appendChild(b);
-            };
-            document.body.appendChild(s);
-        })();
-    <\/script>
-</body>
-</html>
-\`\`\`eof`
-        };
+        appState = recursiveDecode(appState);
 
+        // --- RESTORED RENDER CALL (v11.29 Fix) ---
         buildUI();
 
         const reflexOut = appState.meta?.reflexOutput?.toString().trim().toUpperCase() || 
@@ -411,7 +366,6 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
                     if (btn && btn.dataset.action === 'copy-raw') {
                         triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
                     }
-                    
                     if (ev.target.id === 'proceed-anyway-btn') {
                         if (blocker) blocker.style.display = 'none';
                         if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
@@ -423,143 +377,211 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
             return; 
         }
 
-        // --- V11.22 MACRO DECODER & HYDRATION ---
-        function decodeMacro(text) {
-            if (!text) return "";
-            return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
-                       .replace(/\[\[BACKTICK\]\]/g, '`')
-                       .replace(/\[\[LESS_THAN\]\]/g, '<')
-                       .replace(/\[\[GREATER_THAN\]\]/g, '>')
-                       .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
-                       .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
-                       .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
+        // --- V11.30 REVERSE BLOCK COMPILER (Unified DOM Logic) ---// --- UNIVERSAL STATE ROUTER & COMPILER ---
+        function getUniversalState(versionsArray, targetIndex) {
+            if (!versionsArray || versionsArray.length === 0) return "";
+            let targetVersion = versionsArray[targetIndex];
+
+            // 1. DOM-BASED REVERSE ANCHOR (v11.28+)
+            const domNodes = document.querySelectorAll('.gpa-history-node');
+            if (domNodes.length > 0) {
+                const anchorIndex = versionsArray.length - 1;
+                // Backwards compatibility for older tag names
+                const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
+                let compiledState = promptNode ? decodeMacro(promptNode.textContent) : (versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "");
+
+                if (targetIndex === anchorIndex) return compiledState;
+
+                for (let i = anchorIndex - 1; i >= targetIndex; i--) {
+                    let pastVersion = versionsArray[i];
+                    let patchNodes = document.querySelectorAll(`.gpa-history-node[data-version="${pastVersion.id}"]`);
+                    
+                    patchNodes.forEach(node => {
+                        let blockName = node.getAttribute('data-block');
+                        let oldTextToRestore = node.textContent ? decodeMacro(node.textContent) : "";
+                        
+                        if (blockName) {
+                            if (blockName.toLowerCase() === 'root' || blockName.toLowerCase() === 'full_draft') {
+                                compiledState = oldTextToRestore;
+                            } else {
+                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                                if (blockRegex.test(compiledState)) {
+                                    compiledState = compiledState.replace(blockRegex, `$1\n${oldTextToRestore}\n$3`);
+                                }
+                            }
+                        }
+                    });
+                }
+                return compiledState;
+            }
+
+            // 2. JSON-BASED REVERSE ANCHOR (v11.27)
+            const usesReversePatches = versionsArray.some(v => v.reversePatches);
+            if (usesReversePatches) {
+                const anchorIndex = versionsArray.length - 1;
+                let compiledState = versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "";
+                if (targetIndex === anchorIndex) return compiledState;
+
+                for (let i = anchorIndex - 1; i >= targetIndex; i--) {
+                    let pastVersion = versionsArray[i];
+                    if (pastVersion.reversePatches) {
+                        pastVersion.reversePatches.forEach(patch => {
+                            let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
+                            let oldText = patch.restoreContent ? decodeMacro(patch.restoreContent) : "";
+                            if (blockName) {
+                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                                if (blockRegex.test(compiledState)) {
+                                    compiledState = compiledState.replace(blockRegex, `$1\n${oldText}\n$3`);
+                                }
+                            }
+                        });
+                    }
+                }
+                return compiledState;
+            }
+
+            // 3. JSON-BASED FORWARD ANCHOR (v11.26)
+            const usesForwardPatches = versionsArray.some(v => v.patches);
+            if (usesForwardPatches) {
+                let compiledState = versionsArray[0].content ? decodeMacro(versionsArray[0].content) : "";
+                for (let i = 1; i <= targetIndex; i++) {
+                    let curr = versionsArray[i];
+                    if (curr.content) {
+                        compiledState = decodeMacro(curr.content);
+                    } else if (curr.patches) {
+                        curr.patches.forEach(patch => {
+                            let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
+                            let newText = patch.newContent ? decodeMacro(patch.newContent) : "";
+                            if (blockName) {
+                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                                if (blockRegex.test(compiledState)) {
+                                    compiledState = compiledState.replace(blockRegex, `$1\n${newText}\n$3`);
+                                } else {
+                                    compiledState += `\n<${blockName}>\n${newText}\n</${blockName}>\n`;
+                                }
+                            }
+                        });
+                    }
+                }
+                return compiledState;
+            }
+
+            // 4. LEGACY FALLBACK (v11.20 - v11.25)
+            if (targetVersion.content) return decodeMacro(targetVersion.content);
+            if (targetVersion.delta) return `[LEGACY DELTA SUMMARY - FULL TEXT UNAVAILABLE]\n\n${targetVersion.delta}`;
+            
+            return "";
         }
 
-        const payloads = [];
-        const draftNode = document.getElementById('raw-draft-payload');
-        const prevNode = document.getElementById('previous-prompt-payload');
-        const promptNode = document.getElementById('raw-prompt-payload');
-
-        if (draftNode && draftNode.textContent.trim()) payloads.push(draftNode.textContent.trim());
-        if (prevNode && prevNode.textContent.trim()) payloads.push(prevNode.textContent.trim());
-        if (promptNode && promptNode.textContent.trim()) payloads.push(promptNode.textContent.trim());
-
-        let parsedVersions = appState.versions?.length ? appState.versions : [];
+        // --- LEGACY HYDRATION (v11.20 - v11.25) ---
+        let parsedVersions = appState.versions || [];
         
-        // Dynamic Version Recreation using Regex Extraction (v11.22 Patch)
-        if (parsedVersions.length === 0 && payloads.length > 0) {
-            for (let i = 0; i < payloads.length; i++) {
-                let vMatch = payloads[i].match(/system_prompt version="([^"]+)"/);
-                let vId = vMatch ? `v${vMatch[1]}` : `v1.${i}`;
-                parsedVersions.push({ id: vId, content: payloads[i] });
+        // Detect if we are looking at a modern or legacy architecture
+        const hasHistoryNodes = document.querySelectorAll('.gpa-history-node').length > 0;
+        const hasReversePatches = parsedVersions.some(v => v.reversePatches);
+        const hasForwardPatches = parsedVersions.some(v => v.patches);
+
+        if (!hasHistoryNodes && !hasReversePatches && !hasForwardPatches) {
+            let rebuiltVersions = [];
+            const rawDraft = document.getElementById('raw-draft-payload');
+            const prevPrompt = document.getElementById('previous-prompt-payload');
+            const currPrompt = document.getElementById('raw-prompt-payload') || document.getElementById('current-prompt-payload');
+
+            // Scrape the legacy hardcoded nodes
+            if (rawDraft && rawDraft.textContent.trim()) {
+                rebuiltVersions.push({ id: "v1.0 (Draft)", content: rawDraft.textContent });
+            }
+            if (prevPrompt && prevPrompt.textContent.trim()) {
+                rebuiltVersions.push({ id: "Previous", content: prevPrompt.textContent });
+            }
+            
+            // Map the current prompt, preserving its JSON ID if it exists
+            let currentId = parsedVersions.length > 0 ? parsedVersions[parsedVersions.length - 1].id : "Current";
+            if (currPrompt && currPrompt.textContent.trim()) {
+                rebuiltVersions.push({ id: currentId, content: currPrompt.textContent });
+            } else if (parsedVersions.length > 0) {
+                rebuiltVersions.push(parsedVersions[parsedVersions.length - 1]);
+            }
+
+            // Inject the scraped data back into the main pipeline
+            if (rebuiltVersions.length > 0) {
+                parsedVersions = rebuiltVersions;
             }
         }
-        if (parsedVersions.length === 0) parsedVersions = [{ id: "v1.0", content: "" }];
-
-        // Map available payloads to versions from right to left
-        let pIdx = payloads.length - 1;
-        for (let i = parsedVersions.length - 1; i >= 0 && pIdx >= 0; i--) {
-            parsedVersions[i].content = payloads[pIdx];
-            pIdx--;
-        }
-
-        for (let i = 0; i < parsedVersions.length; i++) {
-            if (parsedVersions[i].content) {
-                parsedVersions[i].content = decodeMacro(parsedVersions[i].content);
-            }
-        }
-
-        window.versions = parsedVersions.filter(v => v.content);
-        if (window.versions.length === 0) window.versions = [{ id: "Current", content: "" }];
+        
+        window.versions = parsedVersions;
 
         // UI Dashboard Binding
-        document.title = `${appState.meta.gemName || 'GPA'} ${appState.meta.version || (appState.iterations ? 'v' + appState.iterations : '')}`;
+        document.title = `${appState.meta.gemName || 'GPA'} ${appState.meta.version || ''}`;
         document.getElementById('ui-gem-name').textContent = appState.meta.gemName || "Gemini Prompt Architect";
         
         if (appState.executiveSummary) {
-            const summaryEl = document.getElementById('summary-ui-container');
-            if (summaryEl) summaryEl.textContent = appState.executiveSummary;
-            
-            const logicEl = document.getElementById('logic-li');
+            document.getElementById('summary-ui-container').textContent = appState.executiveSummary;
             const uiLogic = document.getElementById('ui-logic');
-            if (appState.meta?.promptLogic || appState.meta?.globalPromptLogic) {
-                if (logicEl) logicEl.style.display = 'list-item';
-                if (uiLogic) uiLogic.textContent = appState.meta.promptLogic || appState.meta.globalPromptLogic;
-            } else {
-                if (logicEl) logicEl.style.display = 'none';
-            }
-
-            const outputEl = document.getElementById('output-li');
-            const uiOutput = document.getElementById('ui-output');
-            if (appState.meta?.targetOutput) {
-                if (outputEl) outputEl.style.display = 'list-item';
-                if (uiOutput) uiOutput.textContent = appState.meta.targetOutput;
-            } else {
-                if (outputEl) outputEl.style.display = 'none';
-            }
-        } else {
-            const summaryEl = document.getElementById('summary-ui-container');
-            if (summaryEl) summaryEl.textContent = appState.meta.coreObjective || "N/A";
-            const uiLogic = document.getElementById('ui-logic');
-            if (uiLogic) uiLogic.textContent = appState.meta.globalPromptLogic || appState.meta.promptLogic || "N/A";
+            if (uiLogic) uiLogic.textContent = appState.meta.promptLogic || "N/A";
             const uiOutput = document.getElementById('ui-output');
             if (uiOutput) uiOutput.textContent = appState.meta.targetOutput || "N/A";
         }
 
         document.getElementById('ui-model').textContent = appState.meta.recommendedModel || "Gemini 3.1 Pro";
         document.getElementById('ui-tool').textContent = appState.meta.requiredTool || "Canvas UI";
-        
         document.getElementById('setup-gem-name').textContent = appState.meta.gemName || "Optimized Gem";
-        document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective || appState.meta.promptLogic || appState.executiveSummary || "Optimized instructions";
-        document.getElementById('setup-tool-name').textContent = appState.meta.requiredTool || "Canvas UI";
+        document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective || "Optimized instructions";
 
-        const updateTitle = document.getElementById('ui-update-title');
-        if (updateTitle) updateTitle.textContent = `Refinements Applied (v${appState.meta?.version || appState.iterations || '1.0'}):`;
-
-        const updatesList = document.getElementById('ui-updates-list');
-        if (appState.updates && Array.isArray(appState.updates) && updatesList) {
-            appState.updates.forEach(u => {
-                const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
-            });
-        }
-
+        // --- RESTORED KB & EXECUTION PATH LOGIC ---
         const execPath = appState.meta.executionPath || "B";
-        document.getElementById('setup-option-a').style.display = execPath === 'A' ? 'block' : 'none';
-        document.getElementById('setup-option-b').style.display = execPath === 'B' ? 'block' : 'none';
-        document.getElementById('path-a-preview').style.display = execPath === 'A' ? 'flex' : 'none';
-        document.getElementById('path-b-kb').style.display = execPath === 'B' ? 'flex' : 'none';
+        const optA = document.getElementById('setup-option-a');
+        const optB = document.getElementById('setup-option-b');
+        const pathA = document.getElementById('path-a-preview');
+        const pathB = document.getElementById('path-b-kb');
+
+        if (optA) optA.style.display = execPath === 'A' ? 'block' : 'none';
+        if (optB) optB.style.display = execPath === 'B' ? 'block' : 'none';
+        
+        if (pathA) {
+            if (execPath === 'A') { pathA.classList.remove('hidden'); pathA.style.display = 'flex'; }
+            else { pathA.classList.add('hidden'); pathA.style.display = 'none'; }
+        }
+        if (pathB) {
+            if (execPath === 'B') { pathB.classList.remove('hidden'); pathB.style.display = 'flex'; }
+            else { pathB.classList.add('hidden'); pathB.style.display = 'none'; }
+        }
 
         const kbContainer = document.getElementById('ui-kb-templates-container');
         const kbKeys = appState.kbTemplates ? Object.keys(appState.kbTemplates) : [];
-        document.getElementById('ui-kb-status').textContent = kbKeys.length > 0 ? `Active (${kbKeys.length} File${kbKeys.length > 1 ? 's' : ''})` : `Inactive (0 Files)`;
+        const kbStatus = document.getElementById('ui-kb-status');
+        if (kbStatus) kbStatus.textContent = kbKeys.length > 0 ? `Active (${kbKeys.length} File${kbKeys.length > 1 ? 's' : ''})` : `Inactive (0 Files)`;
 
-        if (kbContainer && kbKeys.length > 0) {
-            kbKeys.forEach((filename) => {
-                const kbDiv = document.createElement('div');
-                kbDiv.className = "mb-6 p-4 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm";
-                kbDiv.innerHTML = `
-                    <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">
-                        <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
-                            <span class="material-symbols-outlined text-teal-500 text-[24px]">html</span>
-                            <div><span class="block">${filename}</span></div>
-                        </h4>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button class="action-btn px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="copy-kb" data-kb-key="${filename}">
-                            <span class="material-symbols-outlined text-[14px]">content_copy</span> <span class="copy-label">Copy HTML</span>
-                        </button>
-                        <button class="action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="download-kb" data-kb-key="${filename}">
-                            <span class="material-symbols-outlined text-[14px]">download</span> Download
-                        </button>
-                        <button class="action-btn px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="open-kb" data-kb-key="${filename}">
-                            <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open
-                        </button>
-                    </div>
-                `;
-                kbContainer.appendChild(kbDiv);
-            });
-        } else if (kbContainer) {
-             kbContainer.innerHTML = '<p class="text-[13px] text-gray-500">No KB templates generated for this iteration.</p>';
+        if (kbContainer) {
+            kbContainer.innerHTML = ''; 
+            if (kbKeys.length > 0) {
+                kbKeys.forEach((filename) => {
+                    const kbDiv = document.createElement('div');
+                    kbDiv.className = "mb-6 p-4 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm";
+                    kbDiv.innerHTML = `
+                        <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-800 pb-2">
+                            <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+                                <span class="material-symbols-outlined text-teal-500 text-[24px]">html</span>
+                                <div><span class="block">${filename}</span></div>
+                            </h4>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="action-btn px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="copy-kb" data-kb-key="${filename}">
+                                <span class="material-symbols-outlined text-[14px]">content_copy</span> <span class="copy-label">Copy HTML</span>
+                            </button>
+                            <button class="action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="download-kb" data-kb-key="${filename}">
+                                <span class="material-symbols-outlined text-[14px]">download</span> Download
+                            </button>
+                            <button class="action-btn px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="open-kb" data-kb-key="${filename}">
+                                <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open
+                            </button>
+                        </div>
+                    `;
+                    kbContainer.appendChild(kbDiv);
+                });
+            } else {
+                 kbContainer.innerHTML = '<p class="text-[13px] text-gray-500">No KB templates generated for this iteration.</p>';
+            }
         }
 
         const setupStep6 = document.getElementById('setup-step-6');
@@ -567,167 +589,99 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
             setupStep6.innerHTML = '<span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 6: Knowledge Database</span><span class="text-[13px]">No KB templates generated for this iteration.</span>';
         }
 
+        // Updates List
+        const updatesList = document.getElementById('ui-updates-list');
+        if (appState.updates && updatesList) {
+            appState.updates.forEach(u => {
+                const li = document.createElement('li'); li.innerHTML = u; updatesList.appendChild(li);
+            });
+        }
+
+        // Questions
         const qContainer = document.getElementById('ui-questions-container');
         if (qContainer && Array.isArray(appState.questions)) {
-            const compiledQuestions = appState.questions.map((q, idx) => {
-                if (typeof q === 'string') {
-                    return {
-                        id: `q${idx + 1}`,
-                        title: `Refinement ${idx + 1}`,
-                        question: q,
-                        context: "Select an option to refine the prompt generation.",
-                        options: [
-                            { value: "Yes", label: "Yes, apply this.", desc: "Implement the suggested refinement.", pro: "Greater specificity.", con: "May narrow scope." },
-                            { value: "No", label: "No, skip this.", desc: "Maintain current trajectory.", pro: "Faster execution.", con: "Missed optimization." }
-                        ]
-                    };
-                }
-                return q;
-            });
-
-            compiledQuestions.forEach((q, idx) => {
+            appState.questions.forEach((q, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = "bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table mb-6";
                 let optionsHtml = '';
-                if (Array.isArray(q.options)) {
+                if (q.options) {
                     q.options.forEach((opt, oIdx) => {
                         const optId = `q${idx}-opt${oIdx}`;
                         optionsHtml += `
                             <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
                                     <div class="flex items-start gap-3">
-                                        <input type="radio" id="${optId}" name="q${idx}" value="${opt.value || opt}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
+                                        <input type="radio" id="${optId}" name="q${idx}" value="${opt.value}" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
                                         <div>
-                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label || opt}</label>
-                                            <p class="text-sm text-slate-500 dark:text-slate-400">${opt.desc || ''}</p>
+                                            <label for="${optId}" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">${opt.label}</label>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">${opt.desc}</p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="border border-gray-300 dark:border-gray-700 p-3 text-[13px] leading-relaxed align-top">
-                                    ${opt.pro || opt.con ? `
                                     <ul class="list-disc pl-4 space-y-1">
-                                        ${opt.pro ? `<li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>` : ''}
-                                        ${opt.con ? `<li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>` : ''}
-                                    </ul>` : ''}
+                                        <li><span class="text-emerald-500 font-bold">Pro:</span> ${opt.pro}</li>
+                                        <li><span class="text-rose-500 font-bold">Con:</span> ${opt.con}</li>
+                                    </ul>
                                 </td>
-                            </tr>
-                        `;
+                            </tr>`;
                     });
                 }
-
-                optionsHtml += `
-                    <tr class="bg-white dark:bg-slate-900 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800">
-                        <td class="border border-gray-300 dark:border-gray-700 p-3 align-top">
-                            <div class="flex items-start gap-3">
-                                <input type="radio" id="q${idx}-other" name="q${idx}" value="Other" class="mt-1 cursor-pointer accent-sky-500 shrink-0">
-                                <div class="flex-grow">
-                                    <label for="q${idx}-other" class="cursor-pointer font-bold text-sky-600 dark:text-sky-400 text-[13px] md:text-sm block mb-1">Other:</label>
-                                    <input type="text" class="other-input w-full border-b border-gray-300 dark:border-gray-600 bg-transparent outline-none focus:border-sky-500 text-sm pb-1" placeholder="Type custom option...">
-                                </div>
-                            </div>
-                        </td>
-                        <td class="border border-gray-300 dark:border-gray-700 p-3 text-[13px] leading-relaxed text-slate-500 align-top">
-                            Provide your own specific constraint.
-                        </td>
-                    </tr>
-                `;
-
-                qContainer.insertAdjacentHTML('beforeend', `
-                    <div class="bg-white dark:bg-[#1e1f20] p-5 rounded-xl border border-gray-200 dark:border-gray-700 question-table mb-6">
-                        <div class="mb-3 px-1">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title || q}</span></h4>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">${q.context || ''}</p>
-                        </div>
-                        <table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
-                            <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-800 text-left">
-                                    <th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th>
-                                    <th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th>
-                                </tr>
-                            </thead>
-                            <tbody>${optionsHtml}</tbody>
-                        </table>
-                    </div>
-                `);
+                qDiv.innerHTML = `<div class="mb-3 px-1"><h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title}</span></h4><p class="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">${q.context}</p></div><table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden"><thead><tr class="bg-gray-100 dark:bg-gray-800 text-left"><th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th><th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th></tr></thead><tbody>${optionsHtml}</tbody></table>`;
+                qContainer.appendChild(qDiv);
             });
         }
 
-        function updateFeedback() {
-            let feedback = '';
-            document.querySelectorAll('.question-table').forEach((table, index) => {
-                const checked = table.querySelector('input[type="radio"]:checked');
-                const titleSpan = table.querySelector('.q-title-text');
-                const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
-                const answer = checked ? (checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value) : '______';
-                feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\n';
-            });
-            const summaryEl = document.getElementById('feedback-summary');
-            if(summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
-        }
-
-        document.addEventListener('change', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
-        document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); });
-
-        const promptContainer = document.getElementById('prompt-ui-container');
-        if (promptContainer && window.versions.length > 0) {
-        }
-
+        // --- UI UPDATER ---
         window.currentVersionIndex = Math.max(0, window.versions.length - 1);
+        
         window.updateVersionUI = function() {
             const vPrev = document.getElementById('v-prev-btn');
             const vNext = document.getElementById('v-next-btn');
             const vLabel = document.getElementById('v-display-label');
+            
             if (vPrev) vPrev.disabled = window.currentVersionIndex <= 0;
             if (vNext) vNext.disabled = window.currentVersionIndex >= window.versions.length - 1;
+            
             if (vLabel && window.versions[window.currentVersionIndex]) {
                 vLabel.textContent = window.versions[window.currentVersionIndex].id || `v${window.currentVersionIndex + 1}`;
             }
+            
             const promptEl = document.getElementById('prompt-ui-container') || document.getElementById('gem-instructions');
             if (!promptEl) return;
-            const currentData = window.versions[window.currentVersionIndex]?.content || '';
-            const previousData = window.currentVersionIndex > 0 ? window.versions[window.currentVersionIndex - 1]?.content : null;
+            
+            // Route everything through the Universal Compiler
+            const currentData = getUniversalState(window.versions, window.currentVersionIndex);
+            const previousData = window.currentVersionIndex > 0 ? getUniversalState(window.versions, window.currentVersionIndex - 1) : null;
+            
             renderDiff(promptEl, currentData, previousData);
         };
+        
+        // Initial call to render UI
         window.updateVersionUI();
 
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('#v-prev-btn')) {
-                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); }
-                return;
+        document.addEventListener('click', e => {
+            if (e.target.closest('#v-prev-btn')) { 
+                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); } 
+                return; 
             }
-            if (e.target.closest('#v-next-btn')) {
-                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); }
-                return;
-            }
-            
-            const actionBtn = e.target.closest('.action-btn');
-            const tabBtn = e.target.closest('.tab-btn');
-            
-            if (tabBtn) {
-                const tab = tabBtn.getAttribute('data-tab');
-                ['prompt', 'flow', 'setup'].forEach(t => {
-                    const contentEl = document.getElementById('app-content-' + t);
-                    const tEl = document.querySelector(`.tab-btn[data-tab="${t}"]`);
-                    if(contentEl && tEl) {
-                        contentEl.classList.add('hidden');
-                        tEl.className = "tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap";
-                    }
-                });
-                const activeContent = document.getElementById('app-content-' + tab);
-                if(activeContent) activeContent.classList.remove('hidden');
-                tabBtn.className = "tab-btn tab-active pb-1 px-1 text-sm font-semibold transition-colors whitespace-nowrap";
-                return;
+            if (e.target.closest('#v-next-btn')) { 
+                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); } 
+                return; 
             }
             
-            if (!actionBtn) return;
-            const action = actionBtn.getAttribute('data-action');
+            const btn = e.target.closest('.action-btn');
             
-            if (action === 'theme-toggle') document.documentElement.classList.toggle('dark');
-            
-            if (action === 'copy-raw') triggerCopy(actionBtn.getAttribute('data-copy-content'), actionBtn.querySelector('.copy-label'));
-            
-            if (action === 'copy-prompt' || action === 'download-prompt') {
-                const content = window.versions[window.currentVersionIndex].content;
-                if (action === 'copy-prompt') triggerCopy(content, actionBtn.querySelector('.copy-label'));
-                if (action === 'download-prompt') {
+            // --- RESTORED COPY/DOWNLOAD ROUTING ---
+            if (btn && (btn.dataset.action === 'copy-prompt' || btn.dataset.action === 'download-prompt')) {
+                // Route the data request through the new Universal Compiler
+                const content = getUniversalState(window.versions, window.currentVersionIndex);
+                
+                if (btn.dataset.action === 'copy-prompt') {
+                    triggerCopy(content, btn.querySelector('.copy-label'));
+                }
+                
+                if (btn.dataset.action === 'download-prompt') {
                     const blob = new Blob([content], { type: 'text/markdown' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -736,43 +690,117 @@ console.log("[GPA Engine] v11.22 - Public - Regex History Extraction & Override 
                 }
             }
             
-            if (action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').textContent, actionBtn.querySelector('.copy-answers-label'));
-            if (action === 'copy-text') triggerCopy(document.getElementById(actionBtn.getAttribute('data-text-target')).textContent, actionBtn.querySelector('.copy-label'));
+            if (btn && btn.dataset.action === 'copy-answers') {
+                triggerCopy(document.getElementById('feedback-summary').textContent, btn.querySelector('.copy-answers-label'));
+            }
             
-            if (action === 'copy-kb' || action === 'download-kb' || action === 'open-kb') {
-                const key = actionBtn.getAttribute('data-kb-key');
+            if (btn && btn.dataset.action === 'copy-text') {
+                triggerCopy(document.getElementById(btn.getAttribute('data-text-target')).textContent, btn.querySelector('.copy-label'));
+            }
+            
+            // KB Actions
+            if (btn && (btn.dataset.action === 'copy-kb' || btn.dataset.action === 'download-kb' || btn.dataset.action === 'open-kb')) {
+                const key = btn.getAttribute('data-kb-key');
                 let htmlContent = appState.kbTemplates ? appState.kbTemplates[key] : null;
                 if (!htmlContent) return;
 
-                if(action === 'copy-kb') {
-                    triggerCopy(htmlContent, actionBtn.querySelector('.copy-label'));
-                } else if (action === 'download-kb') {
+                if(btn.dataset.action === 'copy-kb') {
+                    triggerCopy(htmlContent, btn.querySelector('.copy-label'));
+                } else if (btn.dataset.action === 'download-kb') {
                     const blob = new Blob([htmlContent], { type: 'text/html' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob); a.download = key; a.click();
-                } else if (action === 'open-kb') {
+                } else if (btn.dataset.action === 'open-kb') {
                     const newWindow = window.open();
                     if (newWindow) { newWindow.document.open(); newWindow.document.write(htmlContent); newWindow.document.close(); }
                 }
             }
+            
+            if (btn && btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
         });
 
-        // Hide boot overlay and show app
+        // --- RESTORED REVEAL LOGIC ---
         const mdc = document.getElementById('model-detection-container');
         if (mdc) { 
             mdc.style.opacity = '0'; 
             setTimeout(() => mdc.style.display = 'none', 300); 
         }
         const mainApp = document.getElementById('main-app-container');
-        if(mainApp) { 
+        if (mainApp) { 
             mainApp.classList.remove('hidden'); 
             mainApp.style.display = 'flex'; 
         }
-    }
+    } // <--- End of initApp()
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-        initApp();
-    }
+        const GPA_STATIC_DICTIONARY = {
+            PERSONA_DEFS: `
+      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
+      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
+      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
+              
+            ROUTING_DETAILS: `
+      **INITIALIZATION & ROUTING:**
+      [CASE A] IF user message == "GPA update": 
+          -> Process request and update internal GPA instructions/core logic using provided html template.
+      [CASE B] IF user message == "Pro on" OR user message == "text only":
+          -> Set "proOverride": true in JSON schema. Proceed to optimize the PREVIOUSLY submitted draft. Execute Path 1 (for "Pro on") or Path 2 (for "text only").
+      [CASE C] IF user message is < 5 words AND != "GPA update" AND != "Pro on" AND != "text only" (Normal Greeting):
+          -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
+          -> TERMINATE.
+      [CASE D] OTHERWISE (Standard Request):
+          -> Proceed to evaluate Path 1 or Path 2 below.
+    
+      **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
+      **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
+       
+      **Standard Chat Response Format:**
+      **[Prompt: Topic]** (Turn 1 only)
+      **Introduction:** (Turn 1 only) State role, active mode, and persona.
+      **Feedback Analysis:** Analyze the draft/feedback.
+      **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
+      **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
+      **Canvas UI Introduction:** (If Path 1).
+      **Next Steps:** Conversational list of follow-up actions.
+      **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
+      **PRO REMINDER:** At the absolute end of EVERY message, append a reminder based on the path:
+      - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
+      - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
+                
+            ARTIFACT_TEMPLATE: `\`\`\`html:GPA Output:GPA_Unified_vX.X.html
+        <!DOCTYPE html>
+        <html lang="en" class="dark">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GPA Optimizer</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+        </head>
+        <body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
+            <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
+                [INITIALIZING GPA ARCHITECTURE...]
+            </div>
+            <script type="application/json" id="app-state"><\/script>
+            <script type="text/plain" id="current-prompt-payload"><\/script>
+            <script>
+                (function() {
+                    var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+                    var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+                    var s = document.createElement('script');
+                    s.src = primarySrc;
+                    s.onerror = function() {
+                        var b = document.createElement('script');
+                        b.src = backupSrc;
+                        b.crossOrigin = "anonymous";
+                        document.body.appendChild(b);
+                    };
+                    document.body.appendChild(s);
+                })();
+            <\/script>
+        </body>
+        </html>
+        \`\`\`eof`
+    };
+
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
 })();
