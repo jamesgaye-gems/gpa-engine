@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.30 - Airbus - DOM-Based Reverse History & Root Restoration...");
+console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Restoration...");
 
 (function() {
     window.tailwind = window.tailwind || {};
