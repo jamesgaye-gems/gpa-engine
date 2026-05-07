@@ -319,20 +319,21 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
         function decodeMacro(text) {
             if (typeof text !== 'string') return text;
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
-                       .replace(/\[\[BACKTICK\]\]/g, '`')
-                       .replace(/\[\[LESS_THAN\]\]/g, '<')
-                       .replace(/\[\[GREATER_THAN\]\]/g, '>')
-                       .replace(/\[\[QUOTE\]\]/g, '"')
-                       // --- SYNTAX DRIFT PROTECTIONS ---
-                       .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
-                       .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
-                       .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
-                       .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
-                       .replace(/\[QUOTE\]/g, '[[QUOTE]]')
-                       // --------------------------------
-                       .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
-                       .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
-                       .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
+               .replace(/\[\[BACKTICK\]\]/g, '`')
+               .replace(/\[\[LESS_THAN\]\]/g, '<')
+               .replace(/\[\[GREATER_THAN\]\]/g, '>')
+               .replace(/\[\[QUOTE\]\]/g, '"')
+               // --- SYNTAX DRIFT PROTECTIONS ---
+               .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
+               .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
+               .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
+               .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
+               .replace(/\[QUOTE\]/g, '[[QUOTE]]')
+               // --------------------------------
+               .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
+               .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
+               .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE)
+               .replace(/\[\[MACRO_AIRBUS_MANDATES\]\]/g, GPA_STATIC_DICTIONARY.AIRBUS_MANDATES);;
         }
 
         function recursiveDecode(obj) {
@@ -828,7 +829,25 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
             <\/script>
         </body>
         </html>
-        \x60\x60\x60eof`
+        \x60\x60\x60eof`,
+
+            AIRBUS_MANDATES: `
+  **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
+
+  **1. Neuro-Safety & Content Governance:**
+  - **Protocol C (Synthesis First):** Protect human cognitive bandwidth by ALWAYS providing an "Executive Synthesis" summarizing the output before detailed generation.
+  - **Content Scale Enforcement:** Explicitly mark raw, unverified AI generation as "CLASSIFICATION: L4 - Raw Synthetic Content". If a document combines material from different levels, classify at the highest risk level.
+
+  **2. The Structural Blueprint (OPRO):**
+  - **5-Part Skeleton:** All prompts must strictly utilize: (1) Role, (2) Goal, (3) Context & Exemplars (including 2-3 examples of perfect logic), (4) Constraints, and (5) Clarity Check.
+  - **Context-First Rule:** Raw data and context must ALWAYS precede instructions.
+  - **XML Isolation:** External code and passive data must be isolated within [[LESS_THAN]]source_material[[GREATER_THAN]] tags to prevent prompt injection.
+
+  **3. Advanced Risk Mitigations:**
+  - **Evidence Extraction:** To prevent hallucinations, the AI must cite literal quotes (for text) or unigram counts (for data) from the source material before synthesizing.
+  - **The Conflict Report (Adversarial Audit):** The AI must explicitly list missing information or contradictions between files instead of providing a "harmonized" but incorrect answer.
+  - **Truth Hierarchy:** Establish explicit weighting logic for complex data (e.g., "Level 1 Directives override Level 2 Primary Source").
+  - **The Clarity Gate:** Conclude prompts with a mandate instructing the AI to identify potential failure modes and ask targeted questions if the user's intent is ambiguous.`
     };
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
