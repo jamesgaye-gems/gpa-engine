@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.36 - Public - DOM-Based Reverse History & Root Restoration...");
+console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Restoration...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -334,8 +334,6 @@ console.log("[GPA Engine] v11.36 - Public - DOM-Based Reverse History & Root Res
                        .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
                        .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
         }
-
-        function recursiveDecode(obj) {
 
         function recursiveDecode(obj) {
             if (typeof obj === 'string') return decodeMacro(obj);
@@ -796,8 +794,8 @@ console.log("[GPA Engine] v11.36 - Public - DOM-Based Reverse History & Root Res
             <script type="text/plain" id="current-prompt-payload"><\/script>
             <script>
                 (function() {
-                    var pSrc = "[https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js](https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js)";
-                    var bSrc = "[https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js](https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js)";
+                    var pSrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+                    var bSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
                     var s = document.createElement('script');
                     var deployed = false;
                     
