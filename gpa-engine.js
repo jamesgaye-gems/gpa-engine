@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Restoration...");
+console.log("[GPA Engine] v11.36 - Public - DOM-Based Reverse History & Root Restoration...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -322,16 +322,20 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
                        .replace(/\[\[BACKTICK\]\]/g, '`')
                        .replace(/\[\[LESS_THAN\]\]/g, '<')
                        .replace(/\[\[GREATER_THAN\]\]/g, '>')
-                       // --- NEW SYNTAX DRIFT PROTECTIONS ---
+                       .replace(/\[\[QUOTE\]\]/g, '"')
+                       // --- SYNTAX DRIFT PROTECTIONS ---
                        .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
                        .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
                        .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
                        .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
-                       // ------------------------------------
+                       .replace(/\[QUOTE\]/g, '[[QUOTE]]')
+                       // --------------------------------
                        .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
                        .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
                        .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE);
         }
+
+        function recursiveDecode(obj) {
 
         function recursiveDecode(obj) {
             if (typeof obj === 'string') return decodeMacro(obj);
@@ -383,20 +387,21 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
             let targetVersion = versionsArray[targetIndex];
 
             // 1. DOM-BASED REVERSE ANCHOR (v11.28+)
-            const domNodes = document.querySelectorAll('.gpa-history-node');
-            if (domNodes.length > 0) {
-                const anchorIndex = versionsArray.length - 1;
+            const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
+            
+            if (promptNode) {
+                // NEW: Explicitly read the data-version from the DOM for bulletproof schema mapping
+                const explicitVersion = promptNode.getAttribute('data-version');
                 
-                // CRITICAL FIX: Ensure we grab innerHTML for pristine formatting
-                const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
-                let compiledState = "";
-                
-                if (promptNode && promptNode.innerHTML) {
-                    compiledState = decodeMacro(promptNode.innerHTML.trim());
-                } else if (versionsArray[anchorIndex].content) {
-                    compiledState = decodeMacro(versionsArray[anchorIndex].content);
+                let anchorIndex = versionsArray.length - 1;
+                if (explicitVersion) {
+                    const foundIndex = versionsArray.findIndex(v => v.id === explicitVersion);
+                    if (foundIndex !== -1) anchorIndex = foundIndex;
                 }
 
+                let compiledState = decodeMacro(promptNode.textContent || promptNode.innerHTML || "");
+
+                // If viewing the current version, return it immediately
                 if (targetIndex === anchorIndex) return compiledState;
 
                 for (let i = anchorIndex - 1; i >= targetIndex; i--) {
@@ -791,17 +796,36 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
             <script type="text/plain" id="current-prompt-payload"><\/script>
             <script>
                 (function() {
-                    var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
-                    var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+                    var pSrc = "[https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js](https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js)";
+                    var bSrc = "[https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js](https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js)";
                     var s = document.createElement('script');
-                    s.src = primarySrc;
-                    s.onerror = function() {
+                    var deployed = false;
+                    
+                    function deployBackup(isSSOIntercept) {
+                        if (deployed) return;
+                        deployed = true;
+                        
+                        if (isSSOIntercept) {
+                            var authBanner = document.createElement('div');
+                            authBanner.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;text-align:center;padding:12px;z-index:999999;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:12px;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);"><strong>Airbus Network Intercept:</strong> Please <a href="[https://github.airbus.corp/login](https://github.airbus.corp/login)" target="_blank" style="text-decoration:underline;color:#bfdbfe;font-weight:bold;">Log in to Airbus GitHub (New Tab)</a> and refresh to sync internal engines. Operating on Public Fallback Engine...</div>';
+                            document.body.appendChild(authBanner);
+                        }
+                        
                         var b = document.createElement('script');
-                        b.src = backupSrc;
+                        b.src = bSrc;
                         b.crossOrigin = "anonymous";
                         document.body.appendChild(b);
-                    };
+                    }
+                    
+                    s.src = pSrc;
+                    s.onerror = function() { deployBackup(false); };
                     document.body.appendChild(s);
+                    
+                    setTimeout(function() {
+                        if (!document.getElementById('main-app-container')) {
+                            deployBackup(true);
+                        }
+                    }, 1200);
                 })();
             <\/script>
         </body>
