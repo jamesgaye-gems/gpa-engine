@@ -355,7 +355,7 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
 
         const isProOverride = appState.meta?.proOverride === true || appState.proOverride === true || appState.meta?.proOverride === "true" || appState.proOverride === "true";
 
-        if (reflexOut !== "HI" && !isProOverride) {
+        if ((reflexOut !== "HI" && !(reflexOut >= 990 && reflexOut <= 1100)) && !isProOverride) {
             const mdc = document.getElementById('model-detection-container');
             if (mdc) {
                 const loader = document.getElementById('loading-state');
