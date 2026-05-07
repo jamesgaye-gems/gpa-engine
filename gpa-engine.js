@@ -776,7 +776,7 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
       - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
       - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
                 
-            ARTIFACT_TEMPLATE: `\`\`\`html:GPA Output:GPA_Unified_vX.X.html
+            ARTIFACT_TEMPLATE: `\x60\x60\x60html:GPA Output:GPA_Unified_vX.X.html
         <!DOCTYPE html>
         <html lang="en" class="dark">
         <head>
@@ -828,7 +828,7 @@ console.log("[GPA Engine] v11.30 - Public - DOM-Based Reverse History & Root Res
             <\/script>
         </body>
         </html>
-        \`\`\`eof`
+        \x60\x60\x60eof`
     };
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
