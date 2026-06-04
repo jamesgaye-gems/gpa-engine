@@ -9,62 +9,28 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         return safeLine.replace(/(&lt;\/?)([a-zA-Z0-9_:-]+)(.*?)(&gt;)/g, '<span class="text-slate-400 dark:text-slate-500">$1</span><span class="text-fuchsia-600 dark:text-fuchsia-400 font-semibold">$2</span><span class="text-fuchsia-400 dark:text-fuchsia-300">$3</span><span class="text-slate-400 dark:text-slate-500">$4</span>');
     }
 
-    function getSentences(text) {
-        if (!text) return [];
-        const result = [];
-        let current = '';
-        for (let i = 0; i < text.length; i++) {
-            current += text[i];
-            if (text[i] === '\n') {
-                result.push(current);
-                current = '';
-            } else if (/[.?!]/.test(text[i])) {
-                // If it's punctuation, consume trailing spaces to keep the sentence whole
-                if (i === text.length - 1 || /[ \t\n]/.test(text[i+1])) {
-                    while (i + 1 < text.length && /[ \t]/.test(text[i+1])) {
-                        current += text[++i];
-                    }
-                    result.push(current);
-                    current = '';
-                }
-            }
-        }
-        if (current) result.push(current);
-        return result;
-    }
-
     function renderDiff(targetEl, currentText, previousText) {
         currentText = currentText || '';
         previousText = previousText || '';
         
         if (!previousText) {
-            const currSents = getSentences(currentText);
+            const currLines = currentText.split('\n');
             let htmlOutput = '';
-            for (let i = 0; i < currSents.length; i++) htmlOutput += getHighlightedString(currSents[i]);
+            for (let i = 0; i < currLines.length; i++) htmlOutput += getHighlightedString(currLines[i]) + '\n';
             targetEl.innerHTML = htmlOutput;
             return;
         }
-        
-        const currSents = getSentences(currentText);
-        const prevSents = getSentences(previousText);
-        const prevSet = new Set(prevSents.map(s => s.trim()).filter(s => s.length > 0));
-        
+        const currLines = currentText.split('\n');
+        const prevLines = previousText.split('\n');
+        const prevSet = new Set(prevLines.map(l => l.trim()));
         let htmlOutput = '';
-        for (let i = 0; i < currSents.length; i++) {
-            const sent = currSents[i];
-            const trimmedSent = sent.trim();
-            
-            if (trimmedSent && !prevSet.has(trimmedSent)) {
-                // Isolate leading/trailing spaces and newlines from the green highlight
-                const leadingSpaceMatch = sent.match(/^[\s\n]*/);
-                const trailingSpaceMatch = sent.match(/[\s\n]*$/);
-                const leadingSpace = leadingSpaceMatch ? leadingSpaceMatch[0] : '';
-                const trailingSpace = trailingSpaceMatch ? trailingSpaceMatch[0] : '';
-                
-                const coreText = sent.substring(leadingSpace.length, sent.length - trailingSpace.length);
-                htmlOutput += `${leadingSpace}<span class="diff-new">${getHighlightedString(coreText)}</span>${trailingSpace}`;
+        for (let i = 0; i < currLines.length; i++) {
+            const line = currLines[i];
+            const highlighted = getHighlightedString(line);
+            if (line.trim() && !prevSet.has(line.trim())) {
+                htmlOutput += `<span class="diff-new">${highlighted}</span>\n`;
             } else {
-                htmlOutput += getHighlightedString(sent);
+                htmlOutput += `${highlighted}\n`;
             }
         }
         targetEl.innerHTML = htmlOutput;
@@ -131,6 +97,35 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
                         <button class="action-btn flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-800/50 rounded-full transition-all focus:outline-none whitespace-nowrap" data-action="toggle-format">
                             <span class="material-symbols-outlined text-[16px] pointer-events-none">code_blocks</span> <span class="format-label pointer-events-none">XML</span>
                         </button>
+                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-teal-600 hover:bg-teal-500 text-white rounded-full transition-all shadow-md focus:outline-none" data-action="download-prompt" title="Download Prompt">
+                            <span class="material-symbols-outlined text-[18px] pointer-events-none">download</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 px-4 py-2 text-xs font-bold bg-sky-600 hover:bg-sky-50 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">
+                            <span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
+                        </button>
+                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle" aria-label="Toggle Theme">
+                            <span class="theme-icon material-symbols-outlined text-[20px] pointer-events-none">light_mode</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
+            <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                            <span class="material-symbols-outlined text-sky-500 text-[24px]">design_services</span>
+                            <span id="ui-gem-name" class="font-black text-lg hidden sm:block">Gemini Prompt Architect</span>
+                        </div>
+                        <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
+                        <div class="flex items-center space-x-4 w-full md:w-auto overflow-x-auto no-scrollbar">
+                            <button class="tab-btn tab-active pb-1 px-1 text-sm font-semibold whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>
+                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap hidden" data-tab="flow" style="display: none;">Visual Flowchart</button>
+                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end space-x-3 shrink-0">
                         <button class="action-btn w-9 h-9 flex items-center justify-center bg-teal-600 hover:bg-teal-500 text-white rounded-full transition-all shadow-md focus:outline-none" data-action="download-prompt" title="Download Prompt">
                             <span class="material-symbols-outlined text-[18px] pointer-events-none">download</span>
                         </button>
@@ -322,7 +317,7 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         document.head.appendChild(style);
     }
 
-    function initApp() {
+   function initApp() {
         console.log("[GPA Engine] initApp() executing v11.42 logic.");
 
         const stateElement = document.getElementById('app-state');
@@ -341,168 +336,26 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         // --- V11.42 FORMAT TOGGLE STATE ---
         window.isMarkdownFormat = false;
 
-        const GPA_STATIC_DICTIONARY = {
-            PERSONA_DEFS: `
-      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
-      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
-      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
-              
-            ROUTING_DETAILS: `
-  **INITIALIZATION & ROUTING:**
-
-  **RULE 1: THE SHORT GREETING (TURN 1 ONLY)**
-  IF TURN == 1 AND user input is < 5 words AND != "GPA update":
-  -> ACTION: OUTPUT EXACTLY THIS STATIC GREETING:
-     "Hi! I am the Gemini Prompt Architect, your proactive AI coach.\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\nHere is our game plan:\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context.\\nI have initialized the GPA interface we will use to optimize your prompt interactively.\\n\\nNote: Please make sure Gemini Pro is activated for optimal prompt optimization and UI rendering"
-  -> TERMINATE.
-
-  **RULE 2: SYSTEM UPDATE ("GPA update")**
-  IF user message contains "GPA update":
-  -> ACTION: Treat your internal GPA instructions/core logic as the prompt to be optimized. Execute Path 1.
-
-  **RULE 3: MODE SWITCHING (Turn > 1)**
-  IF user message == "Pro on" OR "text only":
-  -> ACTION: Set "proOverride": true in JSON schema. Optimize the PREVIOUSLY submitted draft.
-  -> IF "Pro on" -> Execute Path 1.
-  -> IF "text only" -> Execute Path 2.
-
-  **RULE 4: STANDARD OPTIMIZATION**
-  IF none of the above specific cases match:
-  -> ACTION: Execute Path 1 (Canvas Mode - Default for 5+ word drafts).
-
-  ## PATH EXECUTION LOGIC
-  - **PATH 1 (Canvas Mode):** Execute Phases 1-3. Output the Standard Chat Response AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
-  - **PATH 2 (Text-Only Mode):** Bypass JSON Canvas. Output Standard Chat Response in chat, AND generate optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow. Explicitly mandate that all technical symbols (backticks, brackets, and script tags) inside the Markdown file MUST be represented as their designated macro tokens (e.g., [[BACKTICK]]).
-   
-  **Standard Chat Response Format:**
-  **Introduction:** State role, active mode, and persona.
-  **Feedback Analysis:** Analyze the draft/feedback.
-  **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
-  **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer. Follow exactly this template for the Surgical Questions section:
-  Question 1: [Topic]
-  Option A: [Description] (Pro: [x], Con: [y])
-  Option B: [Description] (Pro: [x], Con: [y])
-  Reply with 1A, 2B, etc., to apply these changes.
-  **Canvas UI Introduction:** (If Path 1).
-  **Next Steps:** Conversational list of follow-up actions.
-  **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
-  **PRO REMINDER:** At the absolute end of EVERY message except when answering THE SHORT GREETING, append a reminder based on the path:
-  - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
-  - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
-              
-            ARTIFACT_TEMPLATE: `
-\`\`\`html:GPA Output:GPA_Unified_vX.X.html
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPA Optimizer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-</head>
-<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
-    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
-        [INITIALIZING GPA ARCHITECTURE...]
-    </div>
-    <script type="application/json" id="app-state"><\/script>
-    <script type="text/plain" id="current-prompt-payload"><\/script>
-    <script>
-        // Hotfix: Force Event Capture for Feedback Summary Auto-Update
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.matches('input[type="radio"], .other-input')) {
-                let feedback = '';
-                document.querySelectorAll('.question-table').forEach((table, index) => {
-                    const checked = table.querySelector('input[type="radio"]:checked');
-                    const titleSpan = table.querySelector('.q-title-text');
-                    const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
-                    let answer = '______';
-                    if (checked) {
-                        answer = checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value;
-                    }
-                    feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\\n';
-                });
-                const summaryEl = document.getElementById('feedback-summary');
-                if (summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
-            }
-        }, true);
-        
-        document.addEventListener('keyup', function(e) {
-            if (e.target && e.target.matches('.other-input')) {
-                const evt = new Event('change', { bubbles: true });
-                e.target.dispatchEvent(evt);
-            }
-        }, true);
-    <\/script>
-    <script>
-        (function() {
-            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
-            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
-            var s = document.createElement('script');
-            s.src = primarySrc;
-            s.onerror = function() {
-                var b = document.createElement('script');
-                b.src = backupSrc;
-                b.crossOrigin = "anonymous";
-                document.body.appendChild(b);
-            };
-            document.body.appendChild(s);
-        })();
-    <\/script>
-</body>
-</html>
-\`\`\`eof`,
-
-            AIRBUS_MANDATES: `
-  **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
-
-  **1. Neuro-Safety & Content Governance:**
-  - **Protocol C (Synthesis First):** Protect human cognitive bandwidth by ALWAYS providing an "Executive Synthesis" summarizing the output before detailed generation.
-  - **Content Scale Enforcement:** Explicitly mark raw, unverified AI generation as "CLASSIFICATION: L4 - Raw Synthetic Content". If a document combines material from different levels, classify at the highest risk level.
-
-  **2. The Structural Blueprint (OPRO):**
-  - **5-Part Skeleton:** All prompts must strictly utilize: (1) Role, (2) Goal, (3) Context & Exemplars (including 2-3 examples of perfect logic), (4) Constraints, and (5) Clarity Check.
-  - **Context-First Rule:** Raw data and context must ALWAYS precede instructions.
-  - **XML Isolation:** External code and passive data must be isolated within [[LESS_THAN]]source_material[[GREATER_THAN]] tags to prevent prompt injection.
-
-  **3. Advanced Risk Mitigations:**
-  - **Evidence Extraction:** To prevent hallucinations, the AI must cite literal quotes (for text) or unigram counts (for data) from the source material before synthesizing.
-  - **The Conflict Report (Adversarial Audit):** The AI must explicitly list missing information or contradictions between files instead of providing a "harmonized" but incorrect answer.
-  - **Truth Hierarchy:** Establish explicit weighting logic for complex data (e.g., "Level 1 Directives override Level 2 Primary Source").
-  - **The Clarity Gate:** Conclude prompts with a mandate instructing the AI to identify potential failure modes and ask targeted questions if the user's intent is ambiguous.`,
-
-            TEST_TEXT: `Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.
-Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus.
-Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.
-Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante.
-Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc, quis gravida magna mi a libero. Fusce vulputate eleifend sapien. Vestibulum purus quam, scelerisque ut, mollis sed, nonummy id, metus.
-Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi consectetuer lacinia. Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris.
-Integer ante arcu, accumsan a, consectetuer eget, posuere ut, mauris. Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut eros et nisl sagittis vestibulum. Nullam nulla eros, ultricies sit amet, nonummy id, imperdiet feugiat, pede. Sed lectus.
-Donec mollis hendrerit risus. Phasellus nec sem in justo pellentesque facilisis. Etiam imperdiet imperdiet orci. Nunc nec neque. Phasellus leo dolor, tempus non, auctor et, hendrerit quis, nisi. Curabitur ligula sapien, tincidunt non, euismod vitae, posuere imperdiet, leo. Maecenas malesuada. Praesent congue erat at massa. Sed cursus turpis vitae tortor.
-Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci. Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc.
-Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praesent turpis. Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc, eu sollicitudin urna dolor sagittis lacus. Donec elit libero, sodales nec, volutpat a, suscipit non, turpis. Nullam sagittis. Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec pellentesque velit pede quis nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce id purus. Ut varius tincidunt libero. Phasellus dolor. Maecenas vestibulum mollis`
-        };
-
         // --- V11.33 RECURSIVE MACRO DECODER (PATCH) ---
         function decodeMacro(text) {
             if (typeof text !== 'string') return text;
             return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
-                       .replace(/\[\[BACKTICK\]\]/g, '`')
-                       .replace(/\[\[LESS_THAN\]\]/g, '<')
-                       .replace(/\[\[GREATER_THAN\]\]/g, '>')
-                       .replace(/\[\[QUOTE\]\]/g, '"')
-                       // --- SYNTAX DRIFT PROTECTIONS ---
-                       .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
-                       .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
-                       .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
-                       .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
-                       .replace(/\[QUOTE\]/g, '[[QUOTE]]')
-                       // --------------------------------
-                       .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
-                       .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
-                       .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE)
-                       .replace(/\[\[MACRO_AIRBUS_MANDATES\]\]/g, GPA_STATIC_DICTIONARY.AIRBUS_MANDATES)
-                       .replace(/\[\[MACRO_TEST_TEXT\]\]/g, GPA_STATIC_DICTIONARY.TEST_TEXT);
+               .replace(/\[\[BACKTICK\]\]/g, '`')
+               .replace(/\[\[LESS_THAN\]\]/g, '<')
+               .replace(/\[\[GREATER_THAN\]\]/g, '>')
+               .replace(/\[\[QUOTE\]\]/g, '"')
+               // --- SYNTAX DRIFT PROTECTIONS ---
+               .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
+               .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
+               .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
+               .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
+               .replace(/\[QUOTE\]/g, '[[QUOTE]]')
+               // --------------------------------
+               .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
+               .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
+               .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE)
+               .replace(/\[\[MACRO_AIRBUS_MANDATES\]\]/g, GPA_STATIC_DICTIONARY.AIRBUS_MANDATES)
+               .replace(/\[\[MACRO_TEST_TEXT\]\]/g, GPA_STATIC_DICTIONARY.TEST_TEXT);;
         }
 
         function recursiveDecode(obj) {
@@ -519,19 +372,57 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
         // --- RESTORED RENDER CALL (v11.29 Fix) ---
         buildUI();
 
+        const reflexOut = appState.meta?.reflexOutput?.toString().trim().toUpperCase() || 
+                          appState.reflexOutput?.toString().trim().toUpperCase() || 
+                          "";
+
+        const isProOverride = appState.meta?.proOverride === true || appState.proOverride === true || appState.meta?.proOverride === "true" || appState.proOverride === "true";
+
+        if ((reflexOut !== "HI" && !(reflexOut >= 490 && reflexOut <= 510)) && !isProOverride) {
+            const mdc = document.getElementById('model-detection-container');
+            if (mdc) {
+                const loader = document.getElementById('loading-state');
+                const blocker = document.getElementById('fast-model-blocker');
+                if (loader) loader.style.display = 'none';
+                if (blocker) { blocker.classList.remove('hidden'); blocker.style.display = 'block'; }
+                
+                document.addEventListener('click', ev => {
+                    const btn = ev.target.closest('.action-btn');
+                    if (btn && btn.dataset.action === 'copy-raw') {
+                        triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
+                    }
+                    if (ev.target.id === 'proceed-anyway-btn') {
+                        if (blocker) blocker.style.display = 'none';
+                        if (mdc) { mdc.style.opacity = '0'; setTimeout(() => mdc.style.display = 'none', 300); }
+                        const mainApp = document.getElementById('main-app-container');
+                        if (mainApp) { mainApp.classList.remove('hidden'); mainApp.style.display = 'flex'; }
+                    }
+                });
+            }
+            return; 
+        }
+
         // --- V11.30 REVERSE BLOCK COMPILER (Unified DOM Logic) ---// --- UNIVERSAL STATE ROUTER & COMPILER ---
         function getUniversalState(versionsArray, targetIndex) {
             if (!versionsArray || versionsArray.length === 0) return "";
             let targetVersion = versionsArray[targetIndex];
 
             // 1. DOM-BASED REVERSE ANCHOR (v11.28+)
-            const domNodes = document.querySelectorAll('.gpa-history-node');
-            if (domNodes.length > 0) {
-                const anchorIndex = versionsArray.length - 1;
-                // Backwards compatibility for older tag names
-                const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
-                let compiledState = promptNode ? decodeMacro(promptNode.textContent) : (versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "");
+            const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
+            
+            if (promptNode) {
+                // NEW: Explicitly read the data-version from the DOM for bulletproof schema mapping
+                const explicitVersion = promptNode.getAttribute('data-version');
+                
+                let anchorIndex = versionsArray.length - 1;
+                if (explicitVersion) {
+                    const foundIndex = versionsArray.findIndex(v => v.id === explicitVersion);
+                    if (foundIndex !== -1) anchorIndex = foundIndex;
+                }
 
+                let compiledState = decodeMacro(promptNode.textContent || promptNode.innerHTML || "");
+
+                // If viewing the current version, return it immediately
                 if (targetIndex === anchorIndex) return compiledState;
 
                 for (let i = anchorIndex - 1; i >= targetIndex; i--) {
@@ -782,27 +673,59 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
             const vLabel = document.getElementById('v-display-label');
             if (vPrev) vPrev.disabled = window.currentVersionIndex <= 0;
             if (vNext) vNext.disabled = window.currentVersionIndex >= window.versions.length - 1;
-            if (vLabel && window.versions[window.currentVersionIndex]) { vLabel.textContent = window.versions[window.currentVersionIndex].id; }
-            const promptEl = document.getElementById('prompt-ui-container');
+            if (vLabel && window.versions[window.currentVersionIndex]) {
+                vLabel.textContent = window.versions[window.currentVersionIndex].id || `v${window.currentVersionIndex + 1}`;
+            }
+            const promptEl = document.getElementById('prompt-ui-container') || document.getElementById('gem-instructions');
             if (!promptEl) return;
             
-            let currentData = getUniversalState(window.versions, window.currentVersionIndex);
-            let previousData = window.currentVersionIndex > 0 ? getUniversalState(window.versions, window.currentVersionIndex - 1) : null;
+            let currentData = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
+            let previousData = window.currentVersionIndex > 0 ? reconstructPromptStateBackward(window.versions, window.currentVersionIndex - 1) : null;
             
             if (window.isMarkdownFormat) {
                 currentData = convertToMarkdown(currentData);
                 if (previousData) previousData = convertToMarkdown(previousData);
             }
+
+    function getSentences(text) {
+        if (!text) return [];
+        const result = [];
+        let current = '';
+        for (let i = 0; i < text.length; i++) {
+            current += text[i];
+            if (text[i] === '\n') {
+                result.push(current);
+                current = '';
+            } else if (/[.?!]/.test(text[i])) {
+                // If it's punctuation, consume trailing spaces to keep the sentence whole
+                if (i === text.length - 1 || /[ \t\n]/.test(text[i+1])) {
+                    while (i + 1 < text.length && /[ \t]/.test(text[i+1])) {
+                        current += text[++i];
+                    }
+                    result.push(current);
+                    current = '';
+                }
+            }
+        }
+        if (current) result.push(current);
+        return result;
+    }
             
             renderDiff(promptEl, currentData, previousData);
         };
         window.updateVersionUI();
 
-        document.addEventListener('click', e => {
-            if (e.target.closest('#v-prev-btn')) { if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); } return; }
-            if (e.target.closest('#v-next-btn')) { if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); } return; }
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#v-prev-btn')) {
+                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); }
+                return;
+            }
+            if (e.target.closest('#v-next-btn')) {
+                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); }
+                return;
+            }
             
-            const btn = e.target.closest('.action-btn');
+            const actionBtn = e.target.closest('.action-btn');
             const tabBtn = e.target.closest('.tab-btn');
             
             if (tabBtn) {
@@ -820,25 +743,28 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
                 tabBtn.className = "tab-btn tab-active pb-1 px-1 text-sm font-semibold transition-colors whitespace-nowrap";
                 return;
             }
-
-            if (btn && btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
-
-            if (btn && btn.dataset.action === 'toggle-format') {
+            
+            if (!actionBtn) return;
+            const action = actionBtn.getAttribute('data-action');
+            
+            if (action === 'theme-toggle') document.documentElement.classList.toggle('dark');
+            
+            if (action === 'toggle-format') {
                 window.isMarkdownFormat = !window.isMarkdownFormat;
-                btn.querySelector('.format-label').textContent = window.isMarkdownFormat ? 'Markdown' : 'XML';
-                btn.querySelector('.material-symbols-outlined').textContent = window.isMarkdownFormat ? 'subject' : 'code_blocks';
+                actionBtn.querySelector('.format-label').textContent = window.isMarkdownFormat ? 'Markdown' : 'XML';
+                actionBtn.querySelector('.material-symbols-outlined').textContent = window.isMarkdownFormat ? 'subject' : 'code_blocks';
                 window.updateVersionUI();
                 return;
             }
-
-            if (btn && btn.dataset.action === 'copy-raw') triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
-
-            if (btn && (btn.dataset.action === 'copy-prompt' || btn.dataset.action === 'download-prompt')) {
-                let content = getUniversalState(window.versions, window.currentVersionIndex);
+            
+            if (action === 'copy-raw') triggerCopy(actionBtn.getAttribute('data-copy-content'), actionBtn.querySelector('.copy-label'));
+            
+            if (action === 'copy-prompt' || action === 'download-prompt') {
+                let content = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
                 if (window.isMarkdownFormat) content = convertToMarkdown(content);
                 
-                if (btn.dataset.action === 'copy-prompt') triggerCopy(content, btn.querySelector('.copy-label'));
-                if (btn.dataset.action === 'download-prompt') {
+                if (action === 'copy-prompt') triggerCopy(content, actionBtn.querySelector('.copy-label'));
+                if (action === 'download-prompt') {
                     const blob = new Blob([content], { type: 'text/markdown' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -846,10 +772,10 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
                     a.click();
                 }
             }
-
-            if (btn && btn.dataset.action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').textContent, btn.querySelector('.copy-answers-label'));
-            if (btn && btn.dataset.action === 'copy-text') triggerCopy(document.getElementById(btn.getAttribute('data-text-target')).textContent, btn.querySelector('.copy-label'));
-
+            
+            if (action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').textContent, actionBtn.querySelector('.copy-answers-label'));
+            if (action === 'copy-text') triggerCopy(document.getElementById(actionBtn.getAttribute('data-text-target')).textContent, actionBtn.querySelector('.copy-label'));
+            
             // KB Actions
             if (btn && (btn.dataset.action === 'copy-kb' || btn.dataset.action === 'download-kb' || btn.dataset.action === 'open-kb')) {
                 const key = btn.getAttribute('data-kb-key');
@@ -867,8 +793,166 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
                     if (newWindow) { newWindow.document.open(); newWindow.document.write(htmlContent); newWindow.document.close(); }
                 }
             }
+            
+            if (btn && btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
         });
-    }
+
+        // --- RESTORED REVEAL LOGIC ---
+        const mdc = document.getElementById('model-detection-container');
+        if (mdc) { 
+            mdc.style.opacity = '0'; 
+            setTimeout(() => mdc.style.display = 'none', 300); 
+        }
+        const mainApp = document.getElementById('main-app-container');
+        if (mainApp) { 
+            mainApp.classList.remove('hidden'); 
+            mainApp.style.display = 'flex'; 
+        }
+    } // <--- End of initApp()
+
+      const GPA_STATIC_DICTIONARY = {
+            PERSONA_DEFS: `
+      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
+      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
+      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
+              
+            ROUTING_DETAILS: `
+  **INITIALIZATION & ROUTING:**
+
+  **RULE 1: THE SHORT GREETING (TURN 1 ONLY)**
+  IF TURN == 1 AND user input is < 5 words AND != "GPA update":
+  -> ACTION: OUTPUT EXACTLY THIS STATIC GREETING:
+     "Hi! I am the Gemini Prompt Architect, your proactive AI coach.\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\nHere is our game plan:\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context.\\nI have initialized the GPA interface we will use to optimize your prompt interactively.\\n\\nNote: Please make sure Gemini Pro is activated for optimal prompt optimization and UI rendering"
+  -> TERMINATE.
+
+  **RULE 2: SYSTEM UPDATE ("GPA update")**
+  IF user message contains "GPA update":
+  -> ACTION: Treat your internal GPA instructions/core logic as the prompt to be optimized. Execute Path 1.
+
+  **RULE 3: MODE SWITCHING (Turn > 1)**
+  IF user message == "Pro on" OR "text only":
+  -> ACTION: Set "proOverride": true in JSON schema. Optimize the PREVIOUSLY submitted draft.
+  -> IF "Pro on" -> Execute Path 1.
+  -> IF "text only" -> Execute Path 2.
+
+  **RULE 4: STANDARD OPTIMIZATION**
+  IF none of the above specific cases match:
+  -> ACTION: Execute Path 1 (Canvas Mode - Default for 5+ word drafts).
+
+  ## PATH EXECUTION LOGIC
+  - **PATH 1 (Canvas Mode):** Execute Phases 1-3. Output the Standard Chat Response AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
+  - **PATH 2 (Text-Only Mode):** Bypass JSON Canvas. Output Standard Chat Response in chat, AND generate optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow. Explicitly mandate that all technical symbols (backticks, brackets, and script tags) inside the Markdown file MUST be represented as their designated macro tokens (e.g., [[BACKTICK]]).
+   
+  **Standard Chat Response Format:**
+  **Introduction:** State role, active mode, and persona.
+  **Feedback Analysis:** Analyze the draft/feedback.
+  **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
+  **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer. Follow exactly this template for the Surgical Questions section:
+  Question 1: [Topic]
+  Option A: [Description] (Pro: [x], Con: [y])
+  Option B: [Description] (Pro: [x], Con: [y])
+  Reply with 1A, 2B, etc., to apply these changes.
+  **Canvas UI Introduction:** (If Path 1).
+  **Next Steps:** Conversational list of follow-up actions.
+  **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
+  **PRO REMINDER:** At the absolute end of EVERY message except when answering THE SHORT GREETING, append a reminder based on the path:
+  - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
+  - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
+              
+            ARTIFACT_TEMPLATE: `
+\`\`\`html:GPA Output:GPA_Unified_vX.X.html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</head>
+<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
+    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
+        [INITIALIZING GPA ARCHITECTURE...]
+    </div>
+    <script type="application/json" id="app-state"><\/script>
+    <script type="text/plain" id="current-prompt-payload"><\/script>
+    <script>
+        // Hotfix: Force Event Capture for Feedback Summary Auto-Update
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.matches('input[type="radio"], .other-input')) {
+                let feedback = '';
+                document.querySelectorAll('.question-table').forEach((table, index) => {
+                    const checked = table.querySelector('input[type="radio"]:checked');
+                    const titleSpan = table.querySelector('.q-title-text');
+                    const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
+                    let answer = '______';
+                    if (checked) {
+                        answer = checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value;
+                    }
+                    feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\\n';
+                });
+                const summaryEl = document.getElementById('feedback-summary');
+                if (summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
+            }
+        }, true);
+        
+        document.addEventListener('keyup', function(e) {
+            if (e.target && e.target.matches('.other-input')) {
+                const evt = new Event('change', { bubbles: true });
+                e.target.dispatchEvent(evt);
+            }
+        }, true);
+    <\/script>
+    <script>
+        (function() {
+            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+            var s = document.createElement('script');
+            s.src = primarySrc;
+            s.onerror = function() {
+                var b = document.createElement('script');
+                b.src = backupSrc;
+                b.crossOrigin = "anonymous";
+                document.body.appendChild(b);
+            };
+            document.body.appendChild(s);
+        })();
+    <\/script>
+</body>
+</html>
+\`\`\`eof`
+        };
+
+            AIRBUS_MANDATES: `
+  **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
+
+  **1. Neuro-Safety & Content Governance:**
+  - **Protocol C (Synthesis First):** Protect human cognitive bandwidth by ALWAYS providing an "Executive Synthesis" summarizing the output before detailed generation.
+  - **Content Scale Enforcement:** Explicitly mark raw, unverified AI generation as "CLASSIFICATION: L4 - Raw Synthetic Content". If a document combines material from different levels, classify at the highest risk level.
+
+  **2. The Structural Blueprint (OPRO):**
+  - **5-Part Skeleton:** All prompts must strictly utilize: (1) Role, (2) Goal, (3) Context & Exemplars (including 2-3 examples of perfect logic), (4) Constraints, and (5) Clarity Check.
+  - **Context-First Rule:** Raw data and context must ALWAYS precede instructions.
+  - **XML Isolation:** External code and passive data must be isolated within [[LESS_THAN]]source_material[[GREATER_THAN]] tags to prevent prompt injection.
+
+  **3. Advanced Risk Mitigations:**
+  - **Evidence Extraction:** To prevent hallucinations, the AI must cite literal quotes (for text) or unigram counts (for data) from the source material before synthesizing.
+  - **The Conflict Report (Adversarial Audit):** The AI must explicitly list missing information or contradictions between files instead of providing a "harmonized" but incorrect answer.
+  - **Truth Hierarchy:** Establish explicit weighting logic for complex data (e.g., "Level 1 Directives override Level 2 Primary Source").
+  - **The Clarity Gate:** Conclude prompts with a mandate instructing the AI to identify potential failure modes and ask targeted questions if the user's intent is ambiguous.`,
+
+            TEST_TEXT: `Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.
+Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus.
+Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.
+Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante.
+Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc, quis gravida magna mi a libero. Fusce vulputate eleifend sapien. Vestibulum purus quam, scelerisque ut, mollis sed, nonummy id, metus.
+Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi consectetuer lacinia. Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris.
+Integer ante arcu, accumsan a, consectetuer eget, posuere ut, mauris. Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut eros et nisl sagittis vestibulum. Nullam nulla eros, ultricies sit amet, nonummy id, imperdiet feugiat, pede. Sed lectus.
+Donec mollis hendrerit risus. Phasellus nec sem in justo pellentesque facilisis. Etiam imperdiet imperdiet orci. Nunc nec neque. Phasellus leo dolor, tempus non, auctor et, hendrerit quis, nisi. Curabitur ligula sapien, tincidunt non, euismod vitae, posuere imperdiet, leo. Maecenas malesuada. Praesent congue erat at massa. Sed cursus turpis vitae tortor.
+Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci. Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc.
+Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praesent turpis. Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc, eu sollicitudin urna dolor sagittis lacus. Donec elit libero, sodales nec, volutpat a, suscipit non, turpis. Nullam sagittis. Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec pellentesque velit pede quis nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce id purus. Ut varius tincidunt libero. Phasellus dolor. Maecenas vestibulum mollis`
+        };
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
 })();
+
