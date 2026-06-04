@@ -1,12 +1,49 @@
-console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routing logic...");
+console.log("[GPA Engine] v11.42 - Public - XML/Markdown format toggle, feedback auto-update fix, parser protection...");
 
 (function() {
     window.tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
 
+    // --- V11.42 FORMAT CONVERSION UTILITIES ---
+    function convertToMarkdown(text) {
+        if (!text) return "";
+        return text
+            .replace(/<\/([a-zA-Z0-9_]+)>/gi, '') // remove closing tags
+            .replace(/<([a-zA-Z0-9_]+)[^>]*>/gi, function(match, p1) {
+                let title = p1.replace(/_/g, ' ').toUpperCase();
+                return '\n## ' + title + '\n';
+            })
+            .replace(/\n{3,}/g, '\n\n') // reduce multiple blank lines
+            .trim();
+    }
+
     function getHighlightedString(line) {
         let safeLine = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return safeLine.replace(/(&lt;\/?)([a-zA-Z0-9_:-]+)(.*?)(&gt;)/g, '<span class="text-slate-400 dark:text-slate-500">$1</span><span class="text-fuchsia-600 dark:text-fuchsia-400 font-semibold">$2</span><span class="text-fuchsia-400 dark:text-fuchsia-300">$3</span><span class="text-slate-400 dark:text-slate-500">$4</span>');
+        return safeLine.replace(/(&lt;\/?)([a-zA-Z0-9_:-]+)(.*?)(&gt;)/g, '<span class="text-slate-400 dark:text-slate-500">$1</span><span class="text-fuchsia-600 dark:text-fuchsia-400 font-semibold">$2</span><span class="text-slate-400 dark:text-slate-500">$3$4</span>');
+    }
+
+    function getSentences(text) {
+        if (!text) return [];
+        const result = [];
+        let current = '';
+        for (let i = 0; i < text.length; i++) {
+            current += text[i];
+            if (text[i] === '\n') {
+                result.push(current);
+                current = '';
+            } else if (/[.?!]/.test(text[i])) {
+                // If it's punctuation, consume trailing spaces to keep the sentence whole
+                if (i === text.length - 1 || /[ \t\n]/.test(text[i+1])) {
+                    while (i + 1 < text.length && /[ \t]/.test(text[i+1])) {
+                        current += text[++i];
+                    }
+                    result.push(current);
+                    current = '';
+                }
+            }
+        }
+        if (current) result.push(current);
+        return result;
     }
 
     function renderDiff(targetEl, currentText, previousText) {
@@ -14,23 +51,33 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         previousText = previousText || '';
         
         if (!previousText) {
-            const currLines = currentText.split('\n');
+            const currSents = getSentences(currentText);
             let htmlOutput = '';
-            for (let i = 0; i < currLines.length; i++) htmlOutput += getHighlightedString(currLines[i]) + '\n';
+            for (let i = 0; i < currSents.length; i++) htmlOutput += getHighlightedString(currSents[i]);
             targetEl.innerHTML = htmlOutput;
             return;
         }
-        const currLines = currentText.split('\n');
-        const prevLines = previousText.split('\n');
-        const prevSet = new Set(prevLines.map(l => l.trim()));
+        
+        const currSents = getSentences(currentText);
+        const prevSents = getSentences(previousText);
+        const prevSet = new Set(prevSents.map(s => s.trim()).filter(s => s.length > 0));
+        
         let htmlOutput = '';
-        for (let i = 0; i < currLines.length; i++) {
-            const line = currLines[i];
-            const highlighted = getHighlightedString(line);
-            if (line.trim() && !prevSet.has(line.trim())) {
-                htmlOutput += `<span class="diff-new">${highlighted}</span>\n`;
+        for (let i = 0; i < currSents.length; i++) {
+            const sent = currSents[i];
+            const trimmedSent = sent.trim();
+            
+            if (trimmedSent && !prevSet.has(trimmedSent)) {
+                // Isolate leading/trailing spaces and newlines from the green highlight
+                const leadingSpaceMatch = sent.match(/^[\s\n]*/);
+                const trailingSpaceMatch = sent.match(/[\s\n]*$/);
+                const leadingSpace = leadingSpaceMatch ? leadingSpaceMatch[0] : '';
+                const trailingSpace = trailingSpaceMatch ? trailingSpaceMatch[0] : '';
+                
+                const coreText = sent.substring(leadingSpace.length, sent.length - trailingSpace.length);
+                htmlOutput += `${leadingSpace}<span class="diff-new">${getHighlightedString(coreText)}</span>${trailingSpace}`;
             } else {
-                htmlOutput += `${highlighted}\n`;
+                htmlOutput += getHighlightedString(sent);
             }
         }
         targetEl.innerHTML = htmlOutput;
@@ -57,6 +104,19 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         }
     }
 
+    function updateFeedback() {
+        let feedback = '';
+        document.querySelectorAll('.question-table').forEach((table, index) => {
+            const checked = table.querySelector('input[type="radio"]:checked');
+            const titleSpan = table.querySelector('.q-title-text');
+            const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
+            const answer = checked ? (checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value) : '______';
+            feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\n';
+        });
+        const summaryEl = document.getElementById('feedback-summary');
+        if(summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
+    }
+
     function buildUI() {
         const bootLoader = document.getElementById('initial-boot-loader');
         if (bootLoader) bootLoader.remove();
@@ -65,7 +125,7 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
         wrapper.innerHTML = `
-        <div id="model-detection-container" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300" style="display: flex; opacity: 1;">
+        <div id="model-detection-container" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300" style="display: flex;">
             <div id="loading-state" class="p-10 bg-sky-500/5 dark:bg-sky-900/10 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg" style="display: block;">
                 <span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>
                 <h2 class="text-2xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-2">Detecting Model...</h2>
@@ -76,22 +136,22 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                 <span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>
                 <h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Fast Model Detected</h2>
                 <p class="text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> for advanced UI generation.</p>
-                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">Activate Pro model and reply "Pro on" to resume optimization. If Pro is not available, uncheck the Canvas tool and answer exactly "text only" to activate text-only mode.</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">Activate Pro model and reply "Pro on" to resume optimization. If Pro is not available, uncheck the Canvas tool and answer "text only".</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6 text-left">
                     <div class="p-5 bg-red-600 dark:bg-red-500 text-white rounded-2xl shadow-lg border border-red-400">
                         <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">toggle_on</span> Action: Unlock Pro</h4>
                         <p class="text-xs mb-2 opacity-90">1. Activate <strong>Gemini 3.1 Pro</strong>.</p>
-                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="Pro on"><span class="copy-label pointer-events-none">Pro on</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-[11px]" data-action="copy-raw" data-copy-content="Pro on">Pro on</button></p>
                     </div>
                     <div class="p-5 bg-gray-800 text-white rounded-2xl shadow-lg border border-gray-600">
                         <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">article</span> Action: Text Only</h4>
                         <p class="text-xs mb-2 opacity-90">1. Uncheck the <strong>Canvas tool</strong>.</p>
-                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="text only"><span class="copy-label pointer-events-none">text only</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-[11px]" data-action="copy-raw" data-copy-content="text only">text only</button></p>
                     </div>
                 </div>
                 
-                <button id="proceed-anyway-btn" class="mt-2 px-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-white text-xs font-bold rounded-lg transition-colors border border-red-700/50">Proceed Anyway (UI May Break)</button>
+                <button id="proceed-anyway-btn" class="mt-2 px-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-white text-xs font-bold rounded-lg transition-colors border border-red-700/50">Proceed Anyway</button>
             </div>
         </div>
 
@@ -111,6 +171,9 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                         </div>
                     </div>
                     <div class="flex items-center justify-end space-x-3 shrink-0">
+                        <button class="action-btn flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-800/50 rounded-full transition-all focus:outline-none whitespace-nowrap" data-action="toggle-format">
+                            <span class="material-symbols-outlined text-[16px] pointer-events-none">code_blocks</span> <span class="format-label pointer-events-none">XML</span>
+                        </button>
                         <button class="action-btn w-9 h-9 flex items-center justify-center bg-teal-600 hover:bg-teal-500 text-white rounded-full transition-all shadow-md focus:outline-none" data-action="download-prompt" title="Download Prompt">
                             <span class="material-symbols-outlined text-[18px] pointer-events-none">download</span>
                         </button>
@@ -178,11 +241,11 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                 <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
                                     <span class="material-symbols-outlined text-sky-500 text-[18px]">chat</span> Feedback Summary
                                 </h4>
-                                <button class="action-btn flex items-center gap-1 px-3 py-1 text-xs font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none whitespace-nowrap" data-action="copy-answers">
+                                <button class="action-btn flex items-center gap-1 px-3 py-1 text-xs font-bold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded transition-colors focus:outline-none" data-action="copy-answers">
                                     <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="pointer-events-none copy-answers-label">Copy Answers</span>
                                 </button>
                             </div>
-                            <div id="feedback-summary" class="font-mono text-[11px] text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-3 bg-gray-50 dark:bg-[#18191a] rounded" contenteditable="true" spellcheck="false">Please select options above.</div>
+                            <div id="feedback-summary" class="font-mono text-[11px] text-slate-600 dark:text-slate-400 outline-none whitespace-pre-wrap p-3 bg-gray-50 dark:bg-[#18191a] rounded" contenteditable="false">Please select options above.</div>
                         </div>
 
                         <div class="flex flex-col md:flex-row gap-6 md:h-[750px] mt-8">
@@ -190,21 +253,22 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                 <div class="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 shrink-0">
                                     <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Optimized Prompt</h3>
                                     <div id="version-controls" class="items-center gap-1 bg-gray-100 dark:bg-gray-800/50 p-1 rounded-lg" style="display: flex;">
-                                        <button id="v-prev-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                                        <button id="v-prev-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
                                             <span class="material-symbols-outlined text-[16px] pointer-events-none">chevron_left</span>
                                         </button>
                                         <span id="v-display-label" class="text-[10px] font-bold px-2 text-slate-700 dark:text-slate-300 min-w-[40px] text-center">...</span>
-                                        <button id="v-next-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                                        <button id="v-next-btn" class="action-btn flex items-center justify-center w-6 h-6 rounded transition-colors text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
                                             <span class="material-symbols-outlined text-[16px] pointer-events-none">chevron_right</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div id="prompt-ui-container" class="custom-scrollbar outline-none whitespace-pre-wrap text-[13px] leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow" contenteditable="true" spellcheck="false"></div>
+                                <div id="prompt-ui-container" class="custom-scrollbar outline-none whitespace-pre-wrap text-[13px] leading-relaxed text-gray-800 dark:text-gray-200 overflow-auto flex-grow font-mono">
+                                </div>
                             </div>
                             
-                            <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
+                            <div id="path-b-kb" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col">
                                 <div class="flex flex-col h-full">
-                                    <h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2 shrink-0">
+                                    <h3 class="text-base font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex items-center gap-2">
                                         <span class="material-symbols-outlined text-[20px]">folder_zip</span> Gem Knowledge Base
                                     </h3>
                                     <div class="custom-scrollbar overflow-auto flex-grow">
@@ -214,7 +278,7 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                 </div>
                             </div>
 
-                            <div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col overflow-hidden">
+                            <div id="path-a-preview" class="hidden flex-1 min-w-[320px] bg-gray-50 dark:bg-[#18191a] rounded-[28px] p-6 shadow-inner border border-gray-200 dark:border-gray-700/50 flex-col">
                                 <h3 class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]">visibility</span> Standard Execution
                                 </h3>
@@ -250,14 +314,14 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                     <h4 class="font-bold text-slate-400 text-[13px] uppercase tracking-widest mt-8 mb-2 border-b border-gray-100 dark:border-gray-800 pb-2">Custom Gem Setup</h4>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl mb-4 shadow-sm">
                                         <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 1: Gem Creation</span>
-                                        Navigate to the <strong>Gem manager menu</strong> by clicking on the <strong>Gems</strong> bar in the sidebar and click on <span class="inline-block bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 px-2 py-0.5 rounded-full text-[11px] font-bold border border-sky-200 dark:border-sky-700/50 shadow-sm">+ New Gem</span>.
+                                        Navigate to the <strong>Gem manager menu</strong> by clicking on the <strong>Gems</strong> bar in the sidebar and click on <span class="inline-block bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-400 px-2 py-1 rounded font-mono text-[11px]">+ New Gem</span>.
                                     </div>
                                     <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shadow-sm">
                                         <div>
                                             <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 2: Name the Gem</span>
                                             <span id="setup-gem-name" class="font-mono text-[13px]">...</span>
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-name">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 rounded transition-colors" data-action="copy-text" data-text-target="setup-gem-name">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Name</span>
                                         </button>
                                     </div>
@@ -266,7 +330,7 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                             <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 3: Describe the Gem</span>
                                             <span id="setup-gem-desc" class="text-[13px] italic">...</span>
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-text" data-text-target="setup-gem-desc">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 rounded transition-colors" data-action="copy-text" data-text-target="setup-gem-desc">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Desc</span>
                                         </button>
                                     </div>
@@ -275,7 +339,7 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                                             <span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 4: Gem Instructions</span>
                                             Copy prompt and paste it into the <strong>Gem Instructions</strong> field.
                                         </div>
-                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800/50 rounded-lg transition-colors focus:outline-none" data-action="copy-prompt">
+                                        <button class="action-btn flex items-center gap-1 px-3 py-1.5 text-[13px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 rounded transition-colors" data-action="copy-prompt">
                                             <span class="material-symbols-outlined text-[14px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
                                         </button>
                                     </div>
@@ -302,8 +366,126 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         document.head.appendChild(style);
     }
 
+    function decodeMacro(text) {
+        if (typeof text !== 'string') return text;
+        return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
+           .replace(/\[\[BACKTICK\]\]/g, '`')
+           .replace(/\[\[LESS_THAN\]\]/g, '<')
+           .replace(/\[\[GREATER_THAN\]\]/g, '>')
+           .replace(/\[\[QUOTE\]\]/g, '"')
+           .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
+           .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
+           .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE)
+           .replace(/\[\[MACRO_AIRBUS_MANDATES\]\]/g, GPA_STATIC_DICTIONARY.AIRBUS_MANDATES)
+           .replace(/\[\[MACRO_TEST_TEXT\]\]/g, GPA_STATIC_DICTIONARY.TEST_TEXT);
+    }
+
+    function recursiveDecode(obj) {
+        if (typeof obj === 'string') return decodeMacro(obj);
+        if (Array.isArray(obj)) return obj.map(recursiveDecode);
+        if (obj !== null && typeof obj === 'object') {
+            for (let key in obj) { obj[key] = recursiveDecode(obj[key]); }
+        }
+        return obj;
+    }
+
+    function reconstructPromptStateBackward(versionsArray, targetIndex) {
+        if (!versionsArray || versionsArray.length === 0) return "";
+        let targetVersion = versionsArray[targetIndex];
+
+        const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
+        
+        if (promptNode) {
+            const explicitVersion = promptNode.getAttribute('data-version');
+            let anchorIndex = versionsArray.length - 1;
+            if (explicitVersion) {
+                const foundIndex = versionsArray.findIndex(v => v.id === explicitVersion);
+                if (foundIndex !== -1) anchorIndex = foundIndex;
+            }
+
+            let compiledState = decodeMacro(promptNode.textContent || promptNode.innerHTML || "");
+            if (targetIndex === anchorIndex) return compiledState;
+
+            for (let i = anchorIndex - 1; i >= targetIndex; i--) {
+                let pastVersion = versionsArray[i];
+                let patchNodes = document.querySelectorAll(`.gpa-history-node[data-version="${pastVersion.id}"]`);
+                
+                patchNodes.forEach(node => {
+                    let blockName = node.getAttribute('data-block');
+                    let oldTextToRestore = node.textContent ? decodeMacro(node.textContent) : "";
+                    
+                    if (blockName) {
+                        if (blockName.toLowerCase() === 'root' || blockName.toLowerCase() === 'full_draft') {
+                            compiledState = oldTextToRestore;
+                        } else {
+                            let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                            if (blockRegex.test(compiledState)) {
+                                compiledState = compiledState.replace(blockRegex, `$1\n${oldTextToRestore}\n$3`);
+                            }
+                        }
+                    }
+                });
+            }
+            return compiledState;
+        }
+
+        const usesReversePatches = versionsArray.some(v => v.reversePatches);
+        if (usesReversePatches) {
+            const anchorIndex = versionsArray.length - 1;
+            let compiledState = versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "";
+            if (targetIndex === anchorIndex) return compiledState;
+
+            for (let i = anchorIndex - 1; i >= targetIndex; i--) {
+                let pastVersion = versionsArray[i];
+                if (pastVersion.reversePatches) {
+                    pastVersion.reversePatches.forEach(patch => {
+                        let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
+                        let oldText = patch.restoreContent ? decodeMacro(patch.restoreContent) : "";
+                        if (blockName) {
+                            let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                            if (blockRegex.test(compiledState)) {
+                                compiledState = compiledState.replace(blockRegex, `$1\n${oldText}\n$3`);
+                            }
+                        }
+                    });
+                }
+            }
+            return compiledState;
+        }
+
+        const usesForwardPatches = versionsArray.some(v => v.patches);
+        if (usesForwardPatches) {
+            let compiledState = versionsArray[0].content ? decodeMacro(versionsArray[0].content) : "";
+            for (let i = 1; i <= targetIndex; i++) {
+                let curr = versionsArray[i];
+                if (curr.content) {
+                    compiledState = decodeMacro(curr.content);
+                } else if (curr.patches) {
+                    curr.patches.forEach(patch => {
+                        let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
+                        let newText = patch.newContent ? decodeMacro(patch.newContent) : "";
+                        if (blockName) {
+                            let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
+                            if (blockRegex.test(compiledState)) {
+                                compiledState = compiledState.replace(blockRegex, `$1\n${newText}\n$3`);
+                            } else {
+                                compiledState += `\n<${blockName}>\n${newText}\n</${blockName}>\n`;
+                            }
+                        }
+                    });
+                }
+            }
+            return compiledState;
+        }
+
+        if (targetVersion.content) return decodeMacro(targetVersion.content);
+        if (targetVersion.delta) return `[LEGACY DELTA SUMMARY - FULL TEXT UNAVAILABLE]\n\n${targetVersion.delta}`;
+        
+        return "";
+    }
+
     function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.30 logic.");
+        console.log("[GPA Engine] initApp() executing v11.42 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -315,40 +497,94 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             }
         }
 
-        // --- V11.33 RECURSIVE MACRO DECODER (PATCH) ---
-        function decodeMacro(text) {
-            if (typeof text !== 'string') return text;
-            return text.replace(/\[\[CLOSING_SCRIPT\]\]/gi, '</' + 'script>')
-               .replace(/\[\[BACKTICK\]\]/g, '`')
-               .replace(/\[\[LESS_THAN\]\]/g, '<')
-               .replace(/\[\[GREATER_THAN\]\]/g, '>')
-               .replace(/\[\[QUOTE\]\]/g, '"')
-               // --- SYNTAX DRIFT PROTECTIONS ---
-               .replace(/\[BACKTICK\]/g, '[[BACKTICK]]')
-               .replace(/\[LESS_THAN\]/g, '[[LESS_THAN]]')
-               .replace(/\[GREATER_THAN\]/g, '[[GREATER_THAN]]')
-               .replace(/\[CLOSING_SCRIPT\]/g, '[[CLOSING_SCRIPT]]')
-               .replace(/\[QUOTE\]/g, '[[QUOTE]]')
-               // --------------------------------
-               .replace(/\[\[MACRO_PERSONA_DEFS\]\]/g, GPA_STATIC_DICTIONARY.PERSONA_DEFS)
-               .replace(/\[\[MACRO_ROUTING_DETAILS\]\]/g, GPA_STATIC_DICTIONARY.ROUTING_DETAILS)
-               .replace(/\[\[MACRO_ARTIFACT_TEMPLATE\]\]/g, GPA_STATIC_DICTIONARY.ARTIFACT_TEMPLATE)
-               .replace(/\[\[MACRO_AIRBUS_MANDATES\]\]/g, GPA_STATIC_DICTIONARY.AIRBUS_MANDATES)
-               .replace(/\[\[MACRO_TEST_TEXT\]\]/g, GPA_STATIC_DICTIONARY.TEST_TEXT);;
-        }
+        appState.meta = appState.meta || {};
+        window.isMarkdownFormat = false;
 
-        function recursiveDecode(obj) {
-            if (typeof obj === 'string') return decodeMacro(obj);
-            if (Array.isArray(obj)) return obj.map(recursiveDecode);
-            if (obj !== null && typeof obj === 'object') {
-                for (let key in obj) { obj[key] = recursiveDecode(obj[key]); }
-            }
-            return obj;
-        }
+        const GPA_STATIC_DICTIONARY = {
+            PERSONA_DEFS: `
+      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
+      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
+      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
+                  
+            ROUTING_DETAILS: `
+  **INITIALIZATION & ROUTING:**
 
-        appState = recursiveDecode(appState);
+  **RULE 1: THE SHORT GREETING (TURN 1 ONLY)**
+  IF TURN == 1 AND user input is < 5 words AND != "GPA update":
+  -> ACTION: OUTPUT EXACTLY THIS STATIC GREETING:
+     "Hi! I am the Gemini Prompt Architect, your proactive AI coach.\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\nHere is our game plan:\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context.\\nI have initialized the GPA interface we will use to optimize your prompt interactively.\\n\\nNote: Please make sure Gemini Pro is activated for optimal prompt optimization and UI rendering"
+  -> TERMINATE.
 
-        // --- RESTORED RENDER CALL (v11.29 Fix) ---
+  **RULE 2: SYSTEM UPDATE ("GPA update")**
+  IF user message contains "GPA update":
+  -> ACTION: Treat your internal GPA instructions/core logic as the prompt to be optimized. Execute Path 1.
+
+  **RULE 3: MODE SWITCHING (Turn > 1)**
+  IF user message == "Pro on" OR "text only":
+  -> ACTION: Set "proOverride": true in JSON schema. Optimize the PREVIOUSLY submitted draft.
+  -> IF "Pro on" -> Execute Path 1.
+  -> IF "text only" -> Execute Path 2.
+
+  **RULE 4: STANDARD OPTIMIZATION**
+  IF none of the above specific cases match:
+  -> ACTION: Execute Path 1 (Canvas Mode - Default for 5+ word drafts).`,
+                  
+            ARTIFACT_TEMPLATE: `\`\`\`html:GPA Output:GPA_Unified_vX.X.html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</head>
+<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
+    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
+        [INITIALIZING GPA ARCHITECTURE...]
+    </div>
+    <script type="application/json" id="app-state"><\/script>
+    <script type="text/plain" id="current-prompt-payload"><\/script>
+    <script>
+        (function() {
+            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+            var s = document.createElement('script');
+            s.src = primarySrc;
+            s.onerror = function() {
+                var b = document.createElement('script');
+                b.src = backupSrc;
+                b.crossOrigin = "anonymous";
+                document.body.appendChild(b);
+            };
+            document.body.appendChild(s);
+        })();
+    <\/script>
+</body>
+</html>
+\`\`\`eof`,
+
+            AIRBUS_MANDATES: `
+  **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
+
+  **1. Neuro-Safety & Content Governance:**
+  - **Protocol C (Synthesis First):** Protect human cognitive bandwidth by ALWAYS providing an "Executive Synthesis" summarizing the output before detailed generation.
+  - **Content Scale Enforcement:** Explicitly mark raw, unverified AI generation as "CLASSIFICATION: L4 - Raw Synthetic Content". If a document combines material from different levels, classify at the highest risk level.
+
+  **2. The Structural Blueprint (OPRO):**
+  - **5-Part Skeleton:** All prompts must strictly utilize: (1) Role, (2) Goal, (3) Context & Exemplars (including 2-3 examples of perfect logic), (4) Constraints, and (5) Clarity Check.
+  - **Context-First Rule:** Raw data and context must ALWAYS precede instructions.
+  - **XML Isolation:** External code and passive data must be isolated within [[LESS_THAN]]source_material[[GREATER_THAN]] tags to prevent prompt injection.
+
+  **3. Advanced Risk Mitigations:**
+  - **Evidence Extraction:** To prevent hallucinations, the AI must cite literal quotes (for text) or unigram counts (for data) from the source material before synthesizing.
+  - **The Conflict Report (Adversarial Audit):** The AI must explicitly list missing information or contradictions between files instead of providing a "harmonized" but incorrect answer.
+  - **Truth Hierarchy:** Establish explicit weighting logic for complex data (e.g., "Level 1 Directives override Level 2 Primary Source").
+  - **The Clarity Gate:** Conclude prompts with a mandate instructing the AI to identify potential failure modes and ask targeted questions if the user's intent is ambiguous.`,
+
+            TEST_TEXT: `Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.`
+        };
+
         buildUI();
 
         const reflexOut = appState.meta?.reflexOutput?.toString().trim().toUpperCase() || 
@@ -381,114 +617,8 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             return; 
         }
 
-        // --- V11.30 REVERSE BLOCK COMPILER (Unified DOM Logic) ---// --- UNIVERSAL STATE ROUTER & COMPILER ---
-        function getUniversalState(versionsArray, targetIndex) {
-            if (!versionsArray || versionsArray.length === 0) return "";
-            let targetVersion = versionsArray[targetIndex];
-
-            // 1. DOM-BASED REVERSE ANCHOR (v11.28+)
-            const promptNode = document.getElementById('current-prompt-payload') || document.getElementById('raw-prompt-payload');
-            
-            if (promptNode) {
-                // NEW: Explicitly read the data-version from the DOM for bulletproof schema mapping
-                const explicitVersion = promptNode.getAttribute('data-version');
-                
-                let anchorIndex = versionsArray.length - 1;
-                if (explicitVersion) {
-                    const foundIndex = versionsArray.findIndex(v => v.id === explicitVersion);
-                    if (foundIndex !== -1) anchorIndex = foundIndex;
-                }
-
-                let compiledState = decodeMacro(promptNode.textContent || promptNode.innerHTML || "");
-
-                // If viewing the current version, return it immediately
-                if (targetIndex === anchorIndex) return compiledState;
-
-                for (let i = anchorIndex - 1; i >= targetIndex; i--) {
-                    let pastVersion = versionsArray[i];
-                    let patchNodes = document.querySelectorAll(`.gpa-history-node[data-version="${pastVersion.id}"]`);
-                    
-                    patchNodes.forEach(node => {
-                        let blockName = node.getAttribute('data-block');
-                        let oldTextToRestore = node.textContent ? decodeMacro(node.textContent) : "";
-                        
-                        if (blockName) {
-                            if (blockName.toLowerCase() === 'root' || blockName.toLowerCase() === 'full_draft') {
-                                compiledState = oldTextToRestore;
-                            } else {
-                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
-                                if (blockRegex.test(compiledState)) {
-                                    compiledState = compiledState.replace(blockRegex, `$1\n${oldTextToRestore}\n$3`);
-                                }
-                            }
-                        }
-                    });
-                }
-                return compiledState;
-            }
-
-            // 2. JSON-BASED REVERSE ANCHOR (v11.27)
-            const usesReversePatches = versionsArray.some(v => v.reversePatches);
-            if (usesReversePatches) {
-                const anchorIndex = versionsArray.length - 1;
-                let compiledState = versionsArray[anchorIndex].content ? decodeMacro(versionsArray[anchorIndex].content) : "";
-                if (targetIndex === anchorIndex) return compiledState;
-
-                for (let i = anchorIndex - 1; i >= targetIndex; i--) {
-                    let pastVersion = versionsArray[i];
-                    if (pastVersion.reversePatches) {
-                        pastVersion.reversePatches.forEach(patch => {
-                            let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
-                            let oldText = patch.restoreContent ? decodeMacro(patch.restoreContent) : "";
-                            if (blockName) {
-                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
-                                if (blockRegex.test(compiledState)) {
-                                    compiledState = compiledState.replace(blockRegex, `$1\n${oldText}\n$3`);
-                                }
-                            }
-                        });
-                    }
-                }
-                return compiledState;
-            }
-
-            // 3. JSON-BASED FORWARD ANCHOR (v11.26)
-            const usesForwardPatches = versionsArray.some(v => v.patches);
-            if (usesForwardPatches) {
-                let compiledState = versionsArray[0].content ? decodeMacro(versionsArray[0].content) : "";
-                for (let i = 1; i <= targetIndex; i++) {
-                    let curr = versionsArray[i];
-                    if (curr.content) {
-                        compiledState = decodeMacro(curr.content);
-                    } else if (curr.patches) {
-                        curr.patches.forEach(patch => {
-                            let blockName = patch.targetBlock ? patch.targetBlock.toLowerCase() : "";
-                            let newText = patch.newContent ? decodeMacro(patch.newContent) : "";
-                            if (blockName) {
-                                let blockRegex = new RegExp(`(<${blockName}[^>]*>)([\\s\\S]*?)(<\\/${blockName}>)`, "i");
-                                if (blockRegex.test(compiledState)) {
-                                    compiledState = compiledState.replace(blockRegex, `$1\n${newText}\n$3`);
-                                } else {
-                                    compiledState += `\n<${blockName}>\n${newText}\n</${blockName}>\n`;
-                                }
-                            }
-                        });
-                    }
-                }
-                return compiledState;
-            }
-
-            // 4. LEGACY FALLBACK (v11.20 - v11.25)
-            if (targetVersion.content) return decodeMacro(targetVersion.content);
-            if (targetVersion.delta) return `[LEGACY DELTA SUMMARY - FULL TEXT UNAVAILABLE]\n\n${targetVersion.delta}`;
-            
-            return "";
-        }
-
-        // --- LEGACY HYDRATION (v11.20 - v11.25) ---
         let parsedVersions = appState.versions || [];
         
-        // Detect if we are looking at a modern or legacy architecture
         const hasHistoryNodes = document.querySelectorAll('.gpa-history-node').length > 0;
         const hasReversePatches = parsedVersions.some(v => v.reversePatches);
         const hasForwardPatches = parsedVersions.some(v => v.patches);
@@ -499,7 +629,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             const prevPrompt = document.getElementById('previous-prompt-payload');
             const currPrompt = document.getElementById('raw-prompt-payload') || document.getElementById('current-prompt-payload');
 
-            // Scrape the legacy hardcoded nodes
             if (rawDraft && rawDraft.textContent.trim()) {
                 rebuiltVersions.push({ id: "v1.0 (Draft)", content: rawDraft.textContent });
             }
@@ -507,7 +636,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                 rebuiltVersions.push({ id: "Previous", content: prevPrompt.textContent });
             }
             
-            // Map the current prompt, preserving its JSON ID if it exists
             let currentId = parsedVersions.length > 0 ? parsedVersions[parsedVersions.length - 1].id : "Current";
             if (currPrompt && currPrompt.textContent.trim()) {
                 rebuiltVersions.push({ id: currentId, content: currPrompt.textContent });
@@ -515,7 +643,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                 rebuiltVersions.push(parsedVersions[parsedVersions.length - 1]);
             }
 
-            // Inject the scraped data back into the main pipeline
             if (rebuiltVersions.length > 0) {
                 parsedVersions = rebuiltVersions;
             }
@@ -523,7 +650,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         
         window.versions = parsedVersions;
 
-        // UI Dashboard Binding
         document.title = `${appState.meta.gemName || 'GPA'} ${appState.meta.version || ''}`;
         document.getElementById('ui-gem-name').textContent = appState.meta.gemName || "Gemini Prompt Architect";
         
@@ -540,7 +666,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
         document.getElementById('setup-gem-name').textContent = appState.meta.gemName || "Optimized Gem";
         document.getElementById('setup-gem-desc').textContent = appState.meta.coreObjective || "Optimized instructions";
 
-        // --- RESTORED KB & EXECUTION PATH LOGIC ---
         const execPath = appState.meta.executionPath || "B";
         const optA = document.getElementById('setup-option-a');
         const optB = document.getElementById('setup-option-b');
@@ -578,13 +703,13 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                             </h4>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button class="action-btn px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="copy-kb" data-kb-key="${filename}">
+                            <button class="action-btn px-3 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 hover:bg-teal-200 rounded-lg text-[11px] font-bold flex items-center gap-1" data-action="copy-kb" data-kb-key="${filename}">
                                 <span class="material-symbols-outlined text-[14px]">content_copy</span> <span class="copy-label">Copy HTML</span>
                             </button>
-                            <button class="action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="download-kb" data-kb-key="${filename}">
+                            <button class="action-btn px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1" data-action="download-kb" data-kb-key="${filename}">
                                 <span class="material-symbols-outlined text-[14px]">download</span> Download
                             </button>
-                            <button class="action-btn px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 rounded-lg text-[11px] font-bold flex items-center gap-1 focus:outline-none" data-action="open-kb" data-kb-key="${filename}">
+                            <button class="action-btn px-3 py-1.5 bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 rounded-lg text-[11px] font-bold flex items-center gap-1" data-action="open-kb" data-kb-key="${filename}">
                                 <span class="material-symbols-outlined text-[14px]">open_in_new</span> Open
                             </button>
                         </div>
@@ -601,7 +726,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             setupStep6.innerHTML = '<span class="font-bold text-sky-500 block mb-1 underline text-[13px]">Step 6: Knowledge Database</span><span class="text-[13px]">No KB templates generated for this iteration.</span>';
         }
 
-        // Updates List
         const updatesList = document.getElementById('ui-updates-list');
         if (appState.updates && updatesList) {
             appState.updates.forEach(u => {
@@ -609,7 +733,6 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             });
         }
 
-        // Questions
         const qContainer = document.getElementById('ui-questions-container');
         if (qContainer && Array.isArray(appState.questions)) {
             appState.questions.forEach((q, idx) => {
@@ -639,12 +762,11 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                             </tr>`;
                     });
                 }
-                qDiv.innerHTML = `<div class="mb-3 px-1"><h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title}</span></h4><p class="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">${q.context}</p></div><table class="w-full text-sm border-collapse border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden"><thead><tr class="bg-gray-100 dark:bg-gray-800 text-left"><th class="border border-gray-300 dark:border-gray-700 p-3 w-[45%]">Options</th><th class="border border-gray-300 dark:border-gray-700 p-3 w-[55%]">Pros & Cons</th></tr></thead><tbody>${optionsHtml}</tbody></table>`;
+                qDiv.innerHTML = `<div class="mb-3 px-1"><h4 class="font-bold text-slate-800 dark:text-slate-200">${idx + 1}. <span class="q-title-text">${q.question || q.title}</span></h4><p class="text-sm text-slate-600 dark:text-slate-400 mb-4">${q.context || ''}</p></div><div class="overflow-x-auto"><table class="w-full border-collapse">${optionsHtml}</table></div>`;
                 qContainer.appendChild(qDiv);
             });
         }
 
-        // --- UI UPDATER ---
         window.currentVersionIndex = Math.max(0, window.versions.length - 1);
         
         window.updateVersionUI = function() {
@@ -662,15 +784,21 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             const promptEl = document.getElementById('prompt-ui-container') || document.getElementById('gem-instructions');
             if (!promptEl) return;
             
-            // Route everything through the Universal Compiler
-            const currentData = getUniversalState(window.versions, window.currentVersionIndex);
-            const previousData = window.currentVersionIndex > 0 ? getUniversalState(window.versions, window.currentVersionIndex - 1) : null;
+            let currentData = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
+            let previousData = window.currentVersionIndex > 0 ? reconstructPromptStateBackward(window.versions, window.currentVersionIndex - 1) : null;
+            
+            if (window.isMarkdownFormat) {
+                currentData = convertToMarkdown(currentData);
+                if (previousData) previousData = convertToMarkdown(previousData);
+            }
             
             renderDiff(promptEl, currentData, previousData);
         };
         
-        // Initial call to render UI
         window.updateVersionUI();
+
+        document.addEventListener('change', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); }, true);
+        document.addEventListener('keyup', e => { if(e.target.matches('input[type="radio"], .other-input')) updateFeedback(); }, true);
 
         document.addEventListener('click', e => {
             if (e.target.closest('#v-prev-btn')) { 
@@ -683,17 +811,27 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             }
             
             const btn = e.target.closest('.action-btn');
+            if (!btn) return;
             
-            // --- RESTORED COPY/DOWNLOAD ROUTING ---
-            if (btn && (btn.dataset.action === 'copy-prompt' || btn.dataset.action === 'download-prompt')) {
-                // Route the data request through the new Universal Compiler
-                const content = getUniversalState(window.versions, window.currentVersionIndex);
+            const action = btn.getAttribute('data-action');
+
+            if (action === 'toggle-format') {
+                window.isMarkdownFormat = !window.isMarkdownFormat;
+                btn.querySelector('.format-label').textContent = window.isMarkdownFormat ? 'Markdown' : 'XML';
+                btn.querySelector('.material-symbols-outlined').textContent = window.isMarkdownFormat ? 'subject' : 'code_blocks';
+                window.updateVersionUI();
+                return;
+            }
+            
+            if (action === 'copy-prompt' || action === 'download-prompt') {
+                let content = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
+                if (window.isMarkdownFormat) content = convertToMarkdown(content);
                 
-                if (btn.dataset.action === 'copy-prompt') {
+                if (action === 'copy-prompt') {
                     triggerCopy(content, btn.querySelector('.copy-label'));
                 }
                 
-                if (btn.dataset.action === 'download-prompt') {
+                if (action === 'download-prompt') {
                     const blob = new Blob([content], { type: 'text/markdown' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -702,36 +840,46 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
                 }
             }
             
-            if (btn && btn.dataset.action === 'copy-answers') {
+            if (action === 'copy-answers') {
                 triggerCopy(document.getElementById('feedback-summary').textContent, btn.querySelector('.copy-answers-label'));
             }
             
-            if (btn && btn.dataset.action === 'copy-text') {
+            if (action === 'copy-text') {
                 triggerCopy(document.getElementById(btn.getAttribute('data-text-target')).textContent, btn.querySelector('.copy-label'));
             }
             
-            // KB Actions
-            if (btn && (btn.dataset.action === 'copy-kb' || btn.dataset.action === 'download-kb' || btn.dataset.action === 'open-kb')) {
+            if (action === 'copy-raw') {
+                triggerCopy(btn.getAttribute('data-copy-content'), btn.querySelector('.copy-label'));
+            }
+            
+            if (action === 'copy-kb' || action === 'download-kb' || action === 'open-kb') {
                 const key = btn.getAttribute('data-kb-key');
                 let htmlContent = appState.kbTemplates ? appState.kbTemplates[key] : null;
                 if (!htmlContent) return;
 
-                if(btn.dataset.action === 'copy-kb') {
+                if(action === 'copy-kb') {
                     triggerCopy(htmlContent, btn.querySelector('.copy-label'));
-                } else if (btn.dataset.action === 'download-kb') {
+                } else if (action === 'download-kb') {
                     const blob = new Blob([htmlContent], { type: 'text/html' });
                     const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob); a.download = key; a.click();
-                } else if (btn.dataset.action === 'open-kb') {
+                    a.href = URL.createObjectURL(blob); 
+                    a.download = key; 
+                    a.click();
+                } else if (action === 'open-kb') {
                     const newWindow = window.open();
-                    if (newWindow) { newWindow.document.open(); newWindow.document.write(htmlContent); newWindow.document.close(); }
+                    if (newWindow) { 
+                        newWindow.document.open(); 
+                        newWindow.document.write(htmlContent); 
+                        newWindow.document.close(); 
+                    }
                 }
             }
             
-            if (btn && btn.dataset.action === 'theme-toggle') document.documentElement.classList.toggle('dark');
+            if (action === 'theme-toggle') {
+                document.documentElement.classList.toggle('dark');
+            }
         });
 
-        // --- RESTORED REVEAL LOGIC ---
         const mdc = document.getElementById('model-detection-container');
         if (mdc) { 
             mdc.style.opacity = '0'; 
@@ -742,125 +890,11 @@ console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routi
             mainApp.classList.remove('hidden'); 
             mainApp.style.display = 'flex'; 
         }
-    } // <--- End of initApp()
+    }
 
-        const GPA_STATIC_DICTIONARY = {
-            PERSONA_DEFS: `
-      - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
-      - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
-      - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
-              
-            ROUTING_DETAILS: `
-      **INITIALIZATION & ROUTING:**
-      [CASE A] IF user message == "GPA update": 
-          -> Process request and update internal GPA instructions/core logic using provided html template.
-      [CASE B] IF user message == "Pro on" OR user message == "text only":
-          -> Set "proOverride": true in JSON schema. Proceed to optimize the PREVIOUSLY submitted draft. Execute Path 1 (for "Pro on") or Path 2 (for "text only").
-      [CASE C] IF user message is < 5 words AND != "GPA update" AND != "Pro on" AND != "text only" (Normal Greeting):
-          -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
-          -> TERMINATE.
-      [CASE D] OTHERWISE (Standard Request):
-          -> Proceed to evaluate Path 1 or Path 2 below.
-    
-      **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
-      **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
-       
-      **Standard Chat Response Format:**
-      **[Prompt: Topic]** (Turn 1 only)
-      **Introduction:** (Turn 1 only) State role, active mode, and persona.
-      **Feedback Analysis:** Analyze the draft/feedback.
-      **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
-      **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
-      **Canvas UI Introduction:** (If Path 1).
-      **Next Steps:** Conversational list of follow-up actions.
-      **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
-      **PRO REMINDER:** At the absolute end of EVERY message, append a reminder based on the path:
-      - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
-      - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
-                
-            ARTIFACT_TEMPLATE: `\x60\x60\x60html:GPA Output:GPA_Unified_vX.X.html
-        <!DOCTYPE html>
-        <html lang="en" class="dark">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>GPA Optimizer</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-        </head>
-        <body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
-            <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
-                [INITIALIZING GPA ARCHITECTURE...]
-            </div>
-            <script type="application/json" id="app-state"><\/script>
-            <script type="text/plain" id="current-prompt-payload"><\/script>
-            <script>
-                (function() {
-                    var pSrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
-                    var bSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
-                    var s = document.createElement('script');
-                    var deployed = false;
-                    
-                    function deployBackup(isSSOIntercept) {
-                        if (deployed) return;
-                        deployed = true;
-                        
-                        if (isSSOIntercept) {
-                            var authBanner = document.createElement('div');
-                            authBanner.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;text-align:center;padding:12px;z-index:999999;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:12px;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);"><strong>Airbus Network Intercept:</strong> Please <a href="[https://github.airbus.corp/login](https://github.airbus.corp/login)" target="_blank" style="text-decoration:underline;color:#bfdbfe;font-weight:bold;">Log in to Airbus GitHub (New Tab)</a> and refresh to sync internal engines. Operating on Public Fallback Engine...</div>';
-                            document.body.appendChild(authBanner);
-                        }
-                        
-                        var b = document.createElement('script');
-                        b.src = bSrc;
-                        b.crossOrigin = "anonymous";
-                        document.body.appendChild(b);
-                    }
-                    
-                    s.src = pSrc;
-                    s.onerror = function() { deployBackup(false); };
-                    document.body.appendChild(s);
-                    
-                    setTimeout(function() {
-                        if (!document.getElementById('main-app-container')) {
-                            deployBackup(true);
-                        }
-                    }, 1200);
-                })();
-            <\/script>
-        </body>
-        </html>
-        \x60\x60\x60eof`,
-
-            AIRBUS_MANDATES: `
-  **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
-
-  **1. Neuro-Safety & Content Governance:**
-  - **Protocol C (Synthesis First):** Protect human cognitive bandwidth by ALWAYS providing an "Executive Synthesis" summarizing the output before detailed generation.
-  - **Content Scale Enforcement:** Explicitly mark raw, unverified AI generation as "CLASSIFICATION: L4 - Raw Synthetic Content". If a document combines material from different levels, classify at the highest risk level.
-
-  **2. The Structural Blueprint (OPRO):**
-  - **5-Part Skeleton:** All prompts must strictly utilize: (1) Role, (2) Goal, (3) Context & Exemplars (including 2-3 examples of perfect logic), (4) Constraints, and (5) Clarity Check.
-  - **Context-First Rule:** Raw data and context must ALWAYS precede instructions.
-  - **XML Isolation:** External code and passive data must be isolated within [[LESS_THAN]]source_material[[GREATER_THAN]] tags to prevent prompt injection.
-
-  **3. Advanced Risk Mitigations:**
-  - **Evidence Extraction:** To prevent hallucinations, the AI must cite literal quotes (for text) or unigram counts (for data) from the source material before synthesizing.
-  - **The Conflict Report (Adversarial Audit):** The AI must explicitly list missing information or contradictions between files instead of providing a "harmonized" but incorrect answer.
-  - **Truth Hierarchy:** Establish explicit weighting logic for complex data (e.g., "Level 1 Directives override Level 2 Primary Source").
-  - **The Clarity Gate:** Conclude prompts with a mandate instructing the AI to identify potential failure modes and ask targeted questions if the user's intent is ambiguous.`,
-
-            TEST_TEXT: `Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.
-Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus.
-Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.
-Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante.
-Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc, quis gravida magna mi a libero. Fusce vulputate eleifend sapien. Vestibulum purus quam, scelerisque ut, mollis sed, nonummy id, metus.
-Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi consectetuer lacinia. Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris.
-Integer ante arcu, accumsan a, consectetuer eget, posuere ut, mauris. Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui. Aenean ut eros et nisl sagittis vestibulum. Nullam nulla eros, ultricies sit amet, nonummy id, imperdiet feugiat, pede. Sed lectus.
-Donec mollis hendrerit risus. Phasellus nec sem in justo pellentesque facilisis. Etiam imperdiet imperdiet orci. Nunc nec neque. Phasellus leo dolor, tempus non, auctor et, hendrerit quis, nisi. Curabitur ligula sapien, tincidunt non, euismod vitae, posuere imperdiet, leo. Maecenas malesuada. Praesent congue erat at massa. Sed cursus turpis vitae tortor.
-Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci. Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc.
-Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praesent turpis. Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc, eu sollicitudin urna dolor sagittis lacus. Donec elit libero, sodales nec, volutpat a, suscipit non, turpis. Nullam sagittis. Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec pellentesque velit pede quis nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce id purus. Ut varius tincidunt libero. Phasellus dolor. Maecenas vestibulum mollis`
-        };
-
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
+    if (document.readyState === 'loading') { 
+        document.addEventListener('DOMContentLoaded', initApp); 
+    } else { 
+        initApp(); 
+    }
 })();
