@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex task...");
+console.log("[GPA Engine] v11.38 - Public - update to Cognitive Reflex and routing logic...");
 
 (function() {
     window.tailwind = window.tailwind || {};
@@ -57,19 +57,6 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         }
     }
 
-    // --- V11.42 NEW FUNCTION: CONVERT XML TO MARKDOWN ---
-    function convertToMarkdown(text) {
-        if (!text) return "";
-        return text
-            .replace(/<\/([a-zA-Z0-9_]+)>/gi, '') // remove closing tags
-            .replace(/<([a-zA-Z0-9_]+)[^>]*>/gi, function(match, p1) {
-                let title = p1.replace(/_/g, ' ').toUpperCase();
-                return '\n## ' + title + '\n';
-            })
-            .replace(/\n{3,}/g, '\n\n') // reduce multiple blank lines
-            .trim();
-    }
-
     function buildUI() {
         const bootLoader = document.getElementById('initial-boot-loader');
         if (bootLoader) bootLoader.remove();
@@ -78,37 +65,35 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         wrapper.className = "flex flex-col h-screen overflow-hidden items-center w-full relative bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200";
         
         wrapper.innerHTML = `
-        <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 flex">
-            <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                            <span class="material-symbols-outlined text-sky-500 text-[24px]">design_services</span>
-                            <span id="ui-gem-name" class="font-black text-lg hidden sm:block">Gemini Prompt Architect</span>
-                        </div>
-                        <div class="w-px h-6 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
-                        <div class="flex items-center space-x-4 w-full md:w-auto overflow-x-auto no-scrollbar">
-                            <button class="tab-btn tab-active pb-1 px-1 text-sm font-semibold whitespace-nowrap" data-tab="prompt">System Prompt & Feedback</button>
-                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap hidden" data-tab="flow" style="display: none;">Visual Flowchart</button>
-                            <button class="tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 whitespace-nowrap" data-tab="setup">Setup Instructions</button>
-                        </div>
+        <div id="model-detection-container" class="fixed inset-0 z-[999999] bg-[#131314] flex flex-col items-center justify-center p-8 text-center transition-opacity duration-300" style="display: flex; opacity: 1;">
+            <div id="loading-state" class="p-10 bg-sky-500/5 dark:bg-sky-900/10 border-2 border-sky-500/30 rounded-3xl shadow-xl w-full max-w-lg" style="display: block;">
+                <span class="material-symbols-outlined text-6xl text-sky-500 mb-4 animate-spin block">progress_activity</span>
+                <h2 class="text-2xl font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest mb-2">Detecting Model...</h2>
+                <p class="text-gray-700 dark:text-gray-300">Verifying architectural fidelity and execution integrity...</p>
+            </div>
+
+            <div id="fast-model-blocker" class="p-8 bg-red-500/5 dark:bg-red-900/10 border-2 border-red-500/30 rounded-3xl shadow-xl w-full max-w-2xl hidden" style="display: none;">
+                <span class="material-symbols-outlined text-6xl text-red-500 mb-4 animate-pulse">error</span>
+                <h2 class="text-2xl font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Fast Model Detected</h2>
+                <p class="text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">This tool requires <strong>Gemini 3.1 Pro</strong> for advanced UI generation.</p>
+                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">Activate Pro model and reply "Pro on" to resume optimization. If Pro is not available, uncheck the Canvas tool and answer exactly "text only" to activate text-only mode.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6 text-left">
+                    <div class="p-5 bg-red-600 dark:bg-red-500 text-white rounded-2xl shadow-lg border border-red-400">
+                        <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">toggle_on</span> Action: Unlock Pro</h4>
+                        <p class="text-xs mb-2 opacity-90">1. Activate <strong>Gemini 3.1 Pro</strong>.</p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="Pro on"><span class="copy-label pointer-events-none">Pro on</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
                     </div>
-                    <div class="flex items-center justify-end space-x-3 shrink-0">
-                        <button class="action-btn flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-800/50 rounded-full transition-all focus:outline-none whitespace-nowrap" data-action="toggle-format">
-                            <span class="material-symbols-outlined text-[16px] pointer-events-none">code_blocks</span> <span class="format-label pointer-events-none">XML</span>
-                        </button>
-                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-teal-600 hover:bg-teal-500 text-white rounded-full transition-all shadow-md focus:outline-none" data-action="download-prompt" title="Download Prompt">
-                            <span class="material-symbols-outlined text-[18px] pointer-events-none">download</span>
-                        </button>
-                        <button class="action-btn flex items-center gap-2 px-4 py-2 text-xs font-bold bg-sky-600 hover:bg-sky-50 text-white rounded-full transition-all shadow-lg focus:outline-none whitespace-nowrap" data-action="copy-prompt">
-                            <span class="material-symbols-outlined text-[16px] pointer-events-none">content_copy</span> <span class="copy-label pointer-events-none">Copy Prompt</span>
-                        </button>
-                        <button class="action-btn w-9 h-9 flex items-center justify-center bg-transparent hover:bg-gray-200 dark:hover:bg-[#282a2c] rounded-full transition-colors focus:outline-none" data-action="theme-toggle" aria-label="Toggle Theme">
-                            <span class="theme-icon material-symbols-outlined text-[20px] pointer-events-none">light_mode</span>
-                        </button>
+                    <div class="p-5 bg-gray-800 text-white rounded-2xl shadow-lg border border-gray-600">
+                        <h4 class="font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">article</span> Action: Text Only</h4>
+                        <p class="text-xs mb-2 opacity-90">1. Uncheck the <strong>Canvas tool</strong>.</p>
+                        <p class="text-xs opacity-90 leading-loose">2. Answer exactly: <button class="action-btn inline-flex items-center gap-1 px-2 py-0.5 bg-black/20 border border-black/20 rounded font-mono text-white text-xs hover:bg-black/40 focus:outline-none" data-action="copy-raw" data-copy-content="text only"><span class="copy-label pointer-events-none">text only</span> <span class="material-symbols-outlined text-[12px] pointer-events-none">content_copy</span></button></p>
                     </div>
                 </div>
+                
+                <button id="proceed-anyway-btn" class="mt-2 px-4 py-2 bg-red-900/50 hover:bg-red-800/80 text-white text-xs font-bold rounded-lg transition-colors border border-red-700/50">Proceed Anyway (UI May Break)</button>
             </div>
+        </div>
 
         <div id="main-app-container" class="max-w-[1250px] w-full flex-col h-full bg-[#f0f4f9] dark:bg-[#131314] shadow-2xl border-x border-gray-300 dark:border-gray-800 hidden" style="display: none;">
             <div class="shrink-0 z-50 border-b border-gray-200 dark:border-gray-800 px-4 py-4 md:px-8 shadow-sm">
@@ -317,8 +302,8 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         document.head.appendChild(style);
     }
 
-   function initApp() {
-        console.log("[GPA Engine] initApp() executing v11.42 logic.");
+    function initApp() {
+        console.log("[GPA Engine] initApp() executing v11.30 logic.");
 
         const stateElement = document.getElementById('app-state');
         let appState = {};
@@ -329,12 +314,6 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
                 console.error("Failed to parse #app-state JSON. Proceeding with empty state to prevent hard crash.");
             }
         }
-
-        // DEFENSIVE SCHEMA PATCH: Guarantee meta object exists
-        appState.meta = appState.meta || {};
-        
-        // --- V11.42 FORMAT TOGGLE STATE ---
-        window.isMarkdownFormat = false;
 
         // --- V11.33 RECURSIVE MACRO DECODER (PATCH) ---
         function decodeMacro(text) {
@@ -667,104 +646,54 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
 
         // --- UI UPDATER ---
         window.currentVersionIndex = Math.max(0, window.versions.length - 1);
+        
         window.updateVersionUI = function() {
             const vPrev = document.getElementById('v-prev-btn');
             const vNext = document.getElementById('v-next-btn');
             const vLabel = document.getElementById('v-display-label');
+            
             if (vPrev) vPrev.disabled = window.currentVersionIndex <= 0;
             if (vNext) vNext.disabled = window.currentVersionIndex >= window.versions.length - 1;
+            
             if (vLabel && window.versions[window.currentVersionIndex]) {
                 vLabel.textContent = window.versions[window.currentVersionIndex].id || `v${window.currentVersionIndex + 1}`;
             }
+            
             const promptEl = document.getElementById('prompt-ui-container') || document.getElementById('gem-instructions');
             if (!promptEl) return;
             
-            let currentData = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
-            let previousData = window.currentVersionIndex > 0 ? reconstructPromptStateBackward(window.versions, window.currentVersionIndex - 1) : null;
-            
-            if (window.isMarkdownFormat) {
-                currentData = convertToMarkdown(currentData);
-                if (previousData) previousData = convertToMarkdown(previousData);
-            }
-
-    function getSentences(text) {
-        if (!text) return [];
-        const result = [];
-        let current = '';
-        for (let i = 0; i < text.length; i++) {
-            current += text[i];
-            if (text[i] === '\n') {
-                result.push(current);
-                current = '';
-            } else if (/[.?!]/.test(text[i])) {
-                // If it's punctuation, consume trailing spaces to keep the sentence whole
-                if (i === text.length - 1 || /[ \t\n]/.test(text[i+1])) {
-                    while (i + 1 < text.length && /[ \t]/.test(text[i+1])) {
-                        current += text[++i];
-                    }
-                    result.push(current);
-                    current = '';
-                }
-            }
-        }
-        if (current) result.push(current);
-        return result;
-    }
+            // Route everything through the Universal Compiler
+            const currentData = getUniversalState(window.versions, window.currentVersionIndex);
+            const previousData = window.currentVersionIndex > 0 ? getUniversalState(window.versions, window.currentVersionIndex - 1) : null;
             
             renderDiff(promptEl, currentData, previousData);
         };
+        
+        // Initial call to render UI
         window.updateVersionUI();
 
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('#v-prev-btn')) {
-                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); }
-                return;
+        document.addEventListener('click', e => {
+            if (e.target.closest('#v-prev-btn')) { 
+                if (window.currentVersionIndex > 0) { window.currentVersionIndex--; window.updateVersionUI(); } 
+                return; 
             }
-            if (e.target.closest('#v-next-btn')) {
-                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); }
-                return;
-            }
-            
-            const actionBtn = e.target.closest('.action-btn');
-            const tabBtn = e.target.closest('.tab-btn');
-            
-            if (tabBtn) {
-                const tab = tabBtn.getAttribute('data-tab');
-                ['prompt', 'flow', 'setup'].forEach(t => {
-                    const contentEl = document.getElementById('app-content-' + t);
-                    const tEl = document.querySelector(`.tab-btn[data-tab="${t}"]`);
-                    if(contentEl && tEl) {
-                        contentEl.classList.add('hidden');
-                        tEl.className = "tab-btn pb-1 px-1 text-sm font-semibold text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap";
-                    }
-                });
-                const activeContent = document.getElementById('app-content-' + tab);
-                if(activeContent) activeContent.classList.remove('hidden');
-                tabBtn.className = "tab-btn tab-active pb-1 px-1 text-sm font-semibold transition-colors whitespace-nowrap";
-                return;
+            if (e.target.closest('#v-next-btn')) { 
+                if (window.currentVersionIndex < window.versions.length - 1) { window.currentVersionIndex++; window.updateVersionUI(); } 
+                return; 
             }
             
-            if (!actionBtn) return;
-            const action = actionBtn.getAttribute('data-action');
+            const btn = e.target.closest('.action-btn');
             
-            if (action === 'theme-toggle') document.documentElement.classList.toggle('dark');
-            
-            if (action === 'toggle-format') {
-                window.isMarkdownFormat = !window.isMarkdownFormat;
-                actionBtn.querySelector('.format-label').textContent = window.isMarkdownFormat ? 'Markdown' : 'XML';
-                actionBtn.querySelector('.material-symbols-outlined').textContent = window.isMarkdownFormat ? 'subject' : 'code_blocks';
-                window.updateVersionUI();
-                return;
-            }
-            
-            if (action === 'copy-raw') triggerCopy(actionBtn.getAttribute('data-copy-content'), actionBtn.querySelector('.copy-label'));
-            
-            if (action === 'copy-prompt' || action === 'download-prompt') {
-                let content = reconstructPromptStateBackward(window.versions, window.currentVersionIndex);
-                if (window.isMarkdownFormat) content = convertToMarkdown(content);
+            // --- RESTORED COPY/DOWNLOAD ROUTING ---
+            if (btn && (btn.dataset.action === 'copy-prompt' || btn.dataset.action === 'download-prompt')) {
+                // Route the data request through the new Universal Compiler
+                const content = getUniversalState(window.versions, window.currentVersionIndex);
                 
-                if (action === 'copy-prompt') triggerCopy(content, actionBtn.querySelector('.copy-label'));
-                if (action === 'download-prompt') {
+                if (btn.dataset.action === 'copy-prompt') {
+                    triggerCopy(content, btn.querySelector('.copy-label'));
+                }
+                
+                if (btn.dataset.action === 'download-prompt') {
                     const blob = new Blob([content], { type: 'text/markdown' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -773,8 +702,13 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
                 }
             }
             
-            if (action === 'copy-answers') triggerCopy(document.getElementById('feedback-summary').textContent, actionBtn.querySelector('.copy-answers-label'));
-            if (action === 'copy-text') triggerCopy(document.getElementById(actionBtn.getAttribute('data-text-target')).textContent, actionBtn.querySelector('.copy-label'));
+            if (btn && btn.dataset.action === 'copy-answers') {
+                triggerCopy(document.getElementById('feedback-summary').textContent, btn.querySelector('.copy-answers-label'));
+            }
+            
+            if (btn && btn.dataset.action === 'copy-text') {
+                triggerCopy(document.getElementById(btn.getAttribute('data-text-target')).textContent, btn.querySelector('.copy-label'));
+            }
             
             // KB Actions
             if (btn && (btn.dataset.action === 'copy-kb' || btn.dataset.action === 'download-kb' || btn.dataset.action === 'open-kb')) {
@@ -810,118 +744,93 @@ console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex t
         }
     } // <--- End of initApp()
 
-      const GPA_STATIC_DICTIONARY = {
+        const GPA_STATIC_DICTIONARY = {
             PERSONA_DEFS: `
       - **Technical Mode (Default):** Use for coding, data analysis, business logic, or structured workflows. Persona: "The Prompt Engineer," the elite Prompt Optimizer. Language: Precise, mission-oriented. **Associated Model:** Gemini 3.1 Pro.
       - **Creative Mode:** Use for creative writing, storytelling, art generation, or marketing copy. Persona: "The Creator," an inspiring guide. Language: Evocative, story-focused. **UI Override:** Rename HTML headers: "Executive Summary" to "Current Vision", "Updates & Upgrades" to "Creative Upgrades", and "Surgical Questions" to "Refining the Vision". **Associated Model:** Gemini 3 Deep Think.
       - **Educational Mode:** Use if the user asks for explanations, wants to learn prompt engineering, or asks "why/how". Persona: "The Tutor," a Socratic instructor. Language: Inquisitive. **Unique Feature:** Every suggestion must be followed by a **Reasoning:** block explaining the prompt engineering principle behind it. **Associated Model:** Gemini 3 Deep Think.`,
               
             ROUTING_DETAILS: `
-  **INITIALIZATION & ROUTING:**
-
-  **RULE 1: THE SHORT GREETING (TURN 1 ONLY)**
-  IF TURN == 1 AND user input is < 5 words AND != "GPA update":
-  -> ACTION: OUTPUT EXACTLY THIS STATIC GREETING:
-     "Hi! I am the Gemini Prompt Architect, your proactive AI coach.\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\nHere is our game plan:\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context.\\nI have initialized the GPA interface we will use to optimize your prompt interactively.\\n\\nNote: Please make sure Gemini Pro is activated for optimal prompt optimization and UI rendering"
-  -> TERMINATE.
-
-  **RULE 2: SYSTEM UPDATE ("GPA update")**
-  IF user message contains "GPA update":
-  -> ACTION: Treat your internal GPA instructions/core logic as the prompt to be optimized. Execute Path 1.
-
-  **RULE 3: MODE SWITCHING (Turn > 1)**
-  IF user message == "Pro on" OR "text only":
-  -> ACTION: Set "proOverride": true in JSON schema. Optimize the PREVIOUSLY submitted draft.
-  -> IF "Pro on" -> Execute Path 1.
-  -> IF "text only" -> Execute Path 2.
-
-  **RULE 4: STANDARD OPTIMIZATION**
-  IF none of the above specific cases match:
-  -> ACTION: Execute Path 1 (Canvas Mode - Default for 5+ word drafts).
-
-  ## PATH EXECUTION LOGIC
-  - **PATH 1 (Canvas Mode):** Execute Phases 1-3. Output the Standard Chat Response AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
-  - **PATH 2 (Text-Only Mode):** Bypass JSON Canvas. Output Standard Chat Response in chat, AND generate optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow. Explicitly mandate that all technical symbols (backticks, brackets, and script tags) inside the Markdown file MUST be represented as their designated macro tokens (e.g., [[BACKTICK]]).
-   
-  **Standard Chat Response Format:**
-  **Introduction:** State role, active mode, and persona.
-  **Feedback Analysis:** Analyze the draft/feedback.
-  **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
-  **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer. Follow exactly this template for the Surgical Questions section:
-  Question 1: [Topic]
-  Option A: [Description] (Pro: [x], Con: [y])
-  Option B: [Description] (Pro: [x], Con: [y])
-  Reply with 1A, 2B, etc., to apply these changes.
-  **Canvas UI Introduction:** (If Path 1).
-  **Next Steps:** Conversational list of follow-up actions.
-  **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
-  **PRO REMINDER:** At the absolute end of EVERY message except when answering THE SHORT GREETING, append a reminder based on the path:
-  - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
-  - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
-              
-            ARTIFACT_TEMPLATE: `
-\`\`\`html:GPA Output:GPA_Unified_vX.X.html
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPA Optimizer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-</head>
-<body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
-    <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
-        [INITIALIZING GPA ARCHITECTURE...]
-    </div>
-    <script type="application/json" id="app-state"><\/script>
-    <script type="text/plain" id="current-prompt-payload"><\/script>
-    <script>
-        // Hotfix: Force Event Capture for Feedback Summary Auto-Update
-        document.addEventListener('change', function(e) {
-            if (e.target && e.target.matches('input[type="radio"], .other-input')) {
-                let feedback = '';
-                document.querySelectorAll('.question-table').forEach((table, index) => {
-                    const checked = table.querySelector('input[type="radio"]:checked');
-                    const titleSpan = table.querySelector('.q-title-text');
-                    const title = titleSpan ? titleSpan.innerText : 'Question ' + (index+1);
-                    let answer = '______';
-                    if (checked) {
-                        answer = checked.value === 'Other' ? (table.querySelector('.other-input')?.value || '______') : checked.value;
+      **INITIALIZATION & ROUTING:**
+      [CASE A] IF user message == "GPA update": 
+          -> Process request and update internal GPA instructions/core logic using provided html template.
+      [CASE B] IF user message == "Pro on" OR user message == "text only":
+          -> Set "proOverride": true in JSON schema. Proceed to optimize the PREVIOUSLY submitted draft. Execute Path 1 (for "Pro on") or Path 2 (for "text only").
+      [CASE C] IF user message is < 5 words AND != "GPA update" AND != "Pro on" AND != "text only" (Normal Greeting):
+          -> OUTPUT BASE: "**Hi! I am the Gemini Prompt Architect, your proactive AI coach.**\\n\\nMy purpose is to help clarify your intent and architect it into a highly optimized Meta-Prompt to achieve your goals.\\n\\n**Here is our game plan:**\\n> 1. Tell me what you are trying to achieve or build.\\n> 2. I will ask a few quick questions to understand your exact context."
+          -> TERMINATE.
+      [CASE D] OTHERWISE (Standard Request):
+          -> Proceed to evaluate Path 1 or Path 2 below.
+    
+      **PATH 1 (Canvas Mode - Default for 5+ word drafts):** Execute Phases 1-3. Output the **Standard Chat Response** AND the HTML Canvas Block. Apply Mode-specific UI Overrides if in Creative Mode.
+      **PATH 2 (Text-Only Mode):** If requested, bypass JSON Canvas. Output the **Standard Chat Response** in the chat, and MUST generate the optimized prompt in a separate Markdown Canvas file (e.g., \`Optimized_Prompt.md\`) using the file generation workflow.
+       
+      **Standard Chat Response Format:**
+      **[Prompt: Topic]** (Turn 1 only)
+      **Introduction:** (Turn 1 only) State role, active mode, and persona.
+      **Feedback Analysis:** Analyze the draft/feedback.
+      **Strategic Rationale:** Explain architectural improvements and explicitly cite which sections/sources of the Unified_Airbus_Prompt_Mandates.pdf were applied.
+      **Text-Only Path UI Injection:** If Path 2 is executed, explicitly include the Executive Summary, Updates & Upgrades, and Surgical Questions sections in the chat answer.
+      **Canvas UI Introduction:** (If Path 1).
+      **Next Steps:** Conversational list of follow-up actions.
+      **Parser Protection (CRITICAL):** You MUST NEVER use artifact trigger code (e.g., triple backticks followed by a language or filepath) in your conversational chat answers unless you are explicitly intending to generate a distinct artifact/file block.
+      **PRO REMINDER:** At the absolute end of EVERY message, append a reminder based on the path:
+      - PATH 1 (Canvas Mode): "*(Note: Gemini Pro is highly recommended for optimal prompt optimization and UI rendering)*"
+      - PATH 2 (Text-Only Mode, Turn 1 ONLY): "*(Note: Gemini Pro is recommended for optimal prompt optimization)*"`,
+                
+            ARTIFACT_TEMPLATE: `\x60\x60\x60html:GPA Output:GPA_Unified_vX.X.html
+        <!DOCTYPE html>
+        <html lang="en" class="dark">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GPA Optimizer</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+        </head>
+        <body class="bg-gray-100 dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-200 transition-colors duration-200 flex flex-col h-screen overflow-hidden items-center w-full relative">
+            <div id="initial-boot-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-[#131314] text-sky-500 font-mono text-sm animate-pulse">
+                [INITIALIZING GPA ARCHITECTURE...]
+            </div>
+            <script type="application/json" id="app-state"><\/script>
+            <script type="text/plain" id="current-prompt-payload"><\/script>
+            <script>
+                (function() {
+                    var pSrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
+                    var bSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
+                    var s = document.createElement('script');
+                    var deployed = false;
+                    
+                    function deployBackup(isSSOIntercept) {
+                        if (deployed) return;
+                        deployed = true;
+                        
+                        if (isSSOIntercept) {
+                            var authBanner = document.createElement('div');
+                            authBanner.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;background:#ef4444;color:white;text-align:center;padding:12px;z-index:999999;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:12px;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);"><strong>Airbus Network Intercept:</strong> Please <a href="[https://github.airbus.corp/login](https://github.airbus.corp/login)" target="_blank" style="text-decoration:underline;color:#bfdbfe;font-weight:bold;">Log in to Airbus GitHub (New Tab)</a> and refresh to sync internal engines. Operating on Public Fallback Engine...</div>';
+                            document.body.appendChild(authBanner);
+                        }
+                        
+                        var b = document.createElement('script');
+                        b.src = bSrc;
+                        b.crossOrigin = "anonymous";
+                        document.body.appendChild(b);
                     }
-                    feedback += (index + 1) + '. ' + title + ': [ ' + answer + ' ]\\n';
-                });
-                const summaryEl = document.getElementById('feedback-summary');
-                if (summaryEl) summaryEl.textContent = feedback.trim() || 'Please select options above.';
-            }
-        }, true);
-        
-        document.addEventListener('keyup', function(e) {
-            if (e.target && e.target.matches('.other-input')) {
-                const evt = new Event('change', { bubbles: true });
-                e.target.dispatchEvent(evt);
-            }
-        }, true);
-    <\/script>
-    <script>
-        (function() {
-            var primarySrc = "https://github.airbus.corp/pages/Airbus/gpa-engine/gpa-engine.js";
-            var backupSrc = "https://jamesgaye-gems.github.io/gpa-engine/gpa-engine.js";
-            var s = document.createElement('script');
-            s.src = primarySrc;
-            s.onerror = function() {
-                var b = document.createElement('script');
-                b.src = backupSrc;
-                b.crossOrigin = "anonymous";
-                document.body.appendChild(b);
-            };
-            document.body.appendChild(s);
-        })();
-    <\/script>
-</body>
-</html>
-\`\`\`eof`
-        };
+                    
+                    s.src = pSrc;
+                    s.onerror = function() { deployBackup(false); };
+                    document.body.appendChild(s);
+                    
+                    setTimeout(function() {
+                        if (!document.getElementById('main-app-container')) {
+                            deployBackup(true);
+                        }
+                    }, 1200);
+                })();
+            <\/script>
+        </body>
+        </html>
+        \x60\x60\x60eof`,
 
             AIRBUS_MANDATES: `
   **UNIFIED AIRBUS PROMPT MANDATES & NEURO-SAFETY GUIDELINES:**
@@ -955,4 +864,3 @@ Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere. Praes
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } else { initApp(); }
 })();
-
