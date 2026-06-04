@@ -1,4 +1,4 @@
-console.log("[GPA Engine] v11.42 - Airbus - update to removed cognitive reflex task...");
+console.log("[GPA Engine] v11.42 - Public - update to removed cognitive reflex task...");
 
 (function() {
     window.tailwind = window.tailwind || {};
